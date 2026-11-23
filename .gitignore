@@ -1,0 +1,30 @@
+# 环境变量与密钥
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 数据库（SQLite 运行时生成）
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+
+# 前端
+node_modules/
+dist/
+.vite/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+
+docs/回音谷｜纯用户体验视角说明文档.docx

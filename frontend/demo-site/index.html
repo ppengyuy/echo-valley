@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>回音谷 · 项目演示视频</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #f7faf5 0%, #eef4ef 100%);
+      color: #2c4035;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 40px 20px 64px; }
+    header { text-align: center; margin-bottom: 28px; }
+    .kicker { font-size: 13px; letter-spacing: .18em; color: #7d9687; margin: 0 0 10px; }
+    h1 { font-size: 32px; letter-spacing: .06em; margin: 0 0 10px; font-weight: 700; }
+    .sub { margin: 0; font-size: 15px; color: #6b8274; line-height: 1.7; }
+    .player {
+      background: #fff;
+      border: 1px solid rgba(80,110,90,.14);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 18px 50px rgba(40,70,50,.10);
+    }
+    video { display: block; width: 100%; height: auto; border-radius: 12px; background: #eef2ec; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 18px 4px 0; font-size: 13px; color: #718878; }
+    .meta b { color: #40594a; font-weight: 600; }
+    .chapters { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .chapter {
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(80,110,90,.12);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .chapter .no { font-size: 11px; color: #94a99a; letter-spacing: .12em; }
+    .chapter h3 { margin: 6px 0 4px; font-size: 15px; font-weight: 600; }
+    .chapter p { margin: 0; font-size: 12px; color: #7d9284; line-height: 1.6; }
+    .direct { margin-top: 26px; text-align: center; font-size: 13px; }
+    .direct a { color: #4f7a5e; text-decoration: none; border-bottom: 1px solid rgba(79,122,94,.35); }
+    .direct a:hover { border-bottom-color: #4f7a5e; }
+    footer { margin-top: 34px; text-align: center; font-size: 12px; color: #9aab9e; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="kicker">回音谷 · 项目演示</p>
+      <h1>刘看山陪你，备考感悟陪伴搭子</h1>
+      <p class="sub">一段 55 秒的视频，快速看懂「向山谷倾诉」与「梳理山间行程」两条主线。<br />无解说、无账号、无真实数据，评委可直接观看。</p>
+    </header>
+
+    <div class="player">
+      <video controls preload="metadata" poster="poster.png" playsinline>
+        <source src="demo.mp4" type="video/mp4" />
+        你的浏览器不支持 HTML5 视频，请<a href="demo.mp4">直接下载 MP4</a>。
+      </video>
+      <div class="meta">
+        <span><b>时长</b> 55 秒</span>
+        <span><b>分辨率</b> 1440 × 900</span>
+        <span><b>格式</b> MP4（H.264）</span>
+        <span><b>章节</b> 8 段字幕导览</span>
+      </div>
+    </div>
+
+    <section class="chapters">
+      <div class="chapter"><div class="no">01</div><h3>双栏总览</h3><p>左侧山间小路，右侧回音谷，一屏看清产品结构。</p></div>
+      <div class="chapter"><div class="no">02</div><h3>向山谷倾诉</h3><p>低门槛发起一句话，刘看山以「在听」回应。</p></div>
+      <div class="chapter"><div class="no">03</div><h3>梳理山间行程</h3><p>五步向导，一次只问一件事，自动生成一版轻计划。</p></div>
+      <div class="chapter"><div class="no">04</div><h3>时间线三模块</h3><p>任务安排 / 进度记录 / 自留独白，手动存回音。</p></div>
+      <div class="chapter"><div class="no">05</div><h3>周计划浮层</h3><p>点击空白格放一件事，浮层只占左栏不遮右栏。</p></div>
+      <div class="chapter"><div class="no">06</div><h3>带走计划</h3><p>CSV / Excel / 打印手写版，计划是参考不是考核。</p></div>
+      <div class="chapter"><div class="no">07</div><h3>四季主题</h3><p>春夏秋冬只换色调，不改术语与文案。</p></div>
+      <div class="chapter"><div class="no">08</div><h3>减少动态效果</h3><p>一键关掉位移、绘制与漂浮，只保留淡入淡出。</p></div>
+    </section>
+
+    <p class="direct">如需单独提交视频文件：<a href="demo.mp4">打开 / 下载 MP4 原文件</a></p>
+
+    <footer>
+      山谷不评判、不催促，刘看山安静陪着你收下这些声音。<br />
+      本视频为原型演示，画面中的数据均为虚构样例。
+    </footer>
+  </div>
+</body>
+</html>
