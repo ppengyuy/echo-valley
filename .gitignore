@@ -1,6 +1,9 @@
-# 环境变量与密钥
+# 环境变量与密钥（真实 .env 含 Access Secret / LLM API Key，绝不提交）
 .env
+.env.*
+!.env.example
 *.env.local
+backend/.env
 
 # Python
 __pycache__/
@@ -21,6 +24,15 @@ backend/data/
 node_modules/
 dist/
 .vite/
+
+# 内部工具 / 会话数据（非项目代码，不上传）
+.workbuddy/
+.box-agent/
+.box-agent-scratch/
+*.genie
+
+# 旧版本目录（项目已上移到根目录，frontend/ 为历史副本，不再上传）
+frontend/
 
 # 系统
 .DS_Store

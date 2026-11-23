@@ -1,0 +1,25 @@
+#python=3.12
+# Web 框架
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+
+# 数据库
+SQLAlchemy==2.1.9
+
+# 配置与校验
+pydantic==2.14.3
+pydantic-settings==2.16.3
+
+# 认证
+PyJWT==2.15.1
+bcrypt==5.0.0
+
+# LLM 调用 / HTTP
+httpx==0.28.1
+
+# Excel 导出
+openpyxl==3.1.5
+
+# 测试
+pytest==9.2.0
+pytest-asyncio==1.5.0
