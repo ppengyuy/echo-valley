@@ -203,7 +203,7 @@ export async function generateCandidateText(
   goal: string,
   opts: CandidateTextOptions = {},
 ): Promise<string | null> {
-  if (!configured) return null;
+  if (!llmConfigured()) return null;
 
   const stageLine =
     opts.stage && opts.stage !== 'all' && STAGE_HINT[opts.stage]
@@ -246,7 +246,7 @@ const QUOTE_GUARD = `你在找备考者写下的真实经历原句，当作"同�
 不要出现病症名、诊断词、加油/上岸/提分这类词。`;
 
 export async function generateQuoteText(bucketKeyword: string): Promise<string | null> {
-  if (!configured) return null;
+  if (!llmConfigured()) return null;
   const raw = await requestReply([
     { role: 'system', content: QUOTE_GUARD },
     { role: 'user', content: `知乎 备考 ${bucketKeyword} 第一人称 经历 当时` },
@@ -435,7 +435,7 @@ export async function generateQuoteBatch(
   exclude: string[] = [],
   asked = 12,
 ): Promise<string | null> {
-  if (!configured) return null;
+  if (!llmConfigured()) return null;
   const avoid = exclude.slice(-30);
   const raw = await requestReply([
     { role: 'system', content: QUOTE_BATCH_GUARD(asked) },

@@ -3,7 +3,6 @@
 .env.*
 !.env.example
 *.env.local
-backend/.env
 
 # Python
 __pycache__/
@@ -14,8 +13,7 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
-# 数据库（SQLite 运行时生成）
-backend/data/
+# 数据库（运行时生成）
 *.db
 *.db-wal
 *.db-shm

@@ -14,7 +14,7 @@
 
 ## 快速开始
 
-本仓库是回音谷的**可体验原型**：前端在根目录（React + TypeScript + Vite），完整后端的工程在 `backend/`（FastAPI，另作部署用）。开发说明见 `README.dev.md`。
+本仓库是回音谷的**可体验原型**：前端在根目录（React + TypeScript + Vite），无后端、无数据库；计划与回音只存在浏览器会话里。开发说明见 `README.dev.md`。
 
 ```bash
 npm install

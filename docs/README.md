@@ -4,14 +4,14 @@
 
 ## 文档
 
-1. [01-需求与功能清单.md](./01-需求与功能清单.md) — 功能、优先级、红线
-2. [02-数据模型说明.md](./02-数据模型说明.md) — 9 张表、枚举
-3. [03-API接口文档.md](./03-API接口文档.md) — 全部接口、SSE 协议、AI 边界
+1. [01-需求与功能清单.md](./01-需求与功能清单.md) — 功能、优先级、红线（历史设计稿）
+2. [02-数据模型说明.md](./02-数据模型说明.md) — 9 张表、枚举（历史设计稿，对应已移除的后端版）
+3. [03-API接口文档.md](./03-API接口文档.md) — 全部接口、SSE 协议、AI 边界（历史设计稿，对应已移除的后端版）
 4. [04-知乎AI-Works部署指引.md](./04-知乎AI-Works部署指引.md) — 源码发布、ZIP 构建、密钥安全铁律、硅基流动免费模型
 
 ## 技术栈
 
-Vue3 + FastAPI + SQLite + OpenAI 兼容 LLM；用户名密码注册 + JWT。
+Vite + React + TypeScript；纯前端，无后端、无数据库。会话数据存浏览器 `sessionStorage`；可选接入知乎直答（本地开发代理）或硅基流动（用户自填 Key）。
 
 ## 核心机制
 
@@ -24,6 +24,8 @@ Vue3 + FastAPI + SQLite + OpenAI 兼容 LLM；用户名密码注册 + JWT。
 ## 启动
 
 ```bash
-uvicorn app.main:app --reload --port 8000
-npm run dev -- --port 5173
+npm install
+npm run dev
 ```
+
+本地默认地址 `http://127.0.0.1:5178`；构建用 `npm run build`，产物在 `dist/`。
