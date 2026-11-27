@@ -131,7 +131,7 @@ VITE_ZHIDA_MODEL=zhida-fast-1p5
 - 成品：`回音谷_项目演示.mp4`（1440×900，H.264，约 8.3MB），封面 `回音谷_演示封面.png`。
 - 本地播放页：`demo-site/index.html`，含 8 段章节导览与 MP4 直链，可直接打开或整目录静态部署。
 - 内容顺序：双栏总览 → 向山谷倾诉 → 梳理山间行程向导 → 时间线三模块 → 周计划浮层 → 带走计划 → 四季主题 → 减少动态效果。全程带章节字幕，无解说、无真实数据。
-- 复录：`record-demo.mjs` 录屏、`convert-demo.mjs` 用 Chrome 自带 MediaRecorder 转 MP4（不依赖 ffmpeg）；两者临时依赖 `playwright-core`，用 `npm install --no-save playwright-core` 安装即可。
+- 复录：`scripts/record-demo.mjs` 录屏、`scripts/convert-demo.mjs` 用 Chrome 自带 MediaRecorder 转 MP4（不依赖 ffmpeg）；两者临时依赖 `playwright-core`，用 `npm install --no-save playwright-core` 安装即可。
 - 线上公开链接：待发布。首次发布请求遇到临时上传网络错误，未成功；重试成功后把链接填入此处即可。
 
 ## 5. 目录
