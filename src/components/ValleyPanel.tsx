@@ -204,6 +204,13 @@ export function ValleyPanel({
   const idle = useIdle(idleDelay);
   const [hobbyNote, setHobbyNote] = useState(false);
   const hobbyTimer = useRef(0);
+  // 「再问一次」：把旧消息填回输入框。nonce 保证连点同一条也能重新触发。
+  const [reuse, setReuse] = useState<{ text: string; nonce: number } | null>(null);
+  const reuseNonce = useRef(0);
+  const handleReuse = (text: string) => {
+    reuseNonce.current += 1;
+    setReuse({ text, nonce: reuseNonce.current });
+  };
 
   const lastWeather = [...messages]
     .reverse()
@@ -303,6 +310,7 @@ export function ValleyPanel({
                 onSilentKeep={onSilentKeep}
                 onAcceptMirror={onAcceptMirror}
                 onDeclineMirror={onDeclineMirror}
+                onReuse={handleReuse}
               />
               <Composer
                 onSend={onSend}
@@ -318,6 +326,7 @@ export function ValleyPanel({
                   onQuietPanelOpen(!quietPanelOpen);
                 }}
                 onPickStone={onPickStone}
+                reuse={reuse}
               />
               <QuietCompanion
                 panelOpen={quietPanelOpen}

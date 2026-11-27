@@ -7275,3 +7275,293 @@ html[data-reduced='true'] .stone-row.just-picked .stone-mark::after {
 html[data-reduced='true'] .stone-water-input {
   animation: none;
 }
+
+/* ---------- 接入模型：Header 入口 ---------- */
+
+.text-button.model-link {
+  font-size: 11px;
+  color: var(--ink-faint);
+  opacity: 0.78;
+}
+
+.text-button.model-link.is-on {
+  color: var(--accent);
+  opacity: 1;
+  border-bottom-color: var(--accent-faint);
+}
+
+/* ---------- 接入模型：设置弹窗 ---------- */
+
+.model-intro {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.model-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  margin: 0 0 18px;
+  border-radius: 999px;
+  background: var(--accent-faint);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.model-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  opacity: 0.6;
+}
+
+.model-status-dot.is-on {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.model-steps {
+  padding: 13px 15px;
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-soft, transparent);
+}
+
+.model-steps h3,
+.model-safety h3 {
+  margin: 0 0 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.model-steps ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+
+.model-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 11px;
+}
+
+.model-links a {
+  font-size: 11.5px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.model-field {
+  display: block;
+  margin: 0 0 18px;
+}
+
+.model-field > span {
+  display: block;
+  margin: 0 0 7px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.model-field input[type='password'],
+.model-field input[type='text'] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-soft);
+  font-size: 12px;
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.model-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.model-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.model-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.24s var(--ease-soft), border-color 0.24s var(--ease-soft);
+}
+
+.model-option:hover {
+  background: var(--accent-faint);
+}
+
+.model-option.is-on {
+  border-color: var(--accent);
+  background: var(--accent-faint);
+}
+
+.model-option strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.model-option small {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+}
+
+.model-custom {
+  display: block;
+  margin-top: 4px;
+}
+
+.model-custom > span {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.model-free-note {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  line-height: 1.7;
+  color: var(--ink-faint);
+}
+
+.model-message {
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(180, 90, 70, 0.08);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: #9a5a49;
+}
+
+.model-message.is-ok {
+  background: var(--accent-faint);
+  color: var(--accent);
+}
+
+.model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+
+.model-safety {
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: var(--accent-faint);
+}
+
+.model-safety p {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.model-safety ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11px;
+  line-height: 1.85;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 560px) {
+  .model-options { grid-template-columns: 1fr; }
+}
+
+/* ---------- 对话消息：可选中、可复制 ---------- */
+
+/* 明确写 text，避免任何祖先样式把对话文字连带禁掉；气泡本身是纯文本，
+   复制出来的就是原文（含换行），不会被拆成装饰字符。 */
+.bubble {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.thread ::selection,
+.bubble::selection {
+  background: color-mix(in srgb, var(--accent-soft, #a9c3a6) 55%, transparent);
+  color: var(--ink);
+}
+
+/* 工具行默认就在，只是很淡；鼠标移近或键盘聚焦时才加深。
+   触屏没有 hover，直接常驻，否则用户根本发现不了「复制」。 */
+.message-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 2px 3px 0;
+  opacity: 0.68;
+  transition: opacity 0.24s var(--ease-soft);
+}
+
+.message-row.user .message-tools {
+  justify-content: flex-end;
+}
+
+.message-row:hover .message-tools,
+.message-tools:focus-within {
+  opacity: 1;
+}
+
+.message-tool {
+  padding: 2px 3px;
+  border: 0;
+  background: transparent;
+  font-size: 10.5px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color 0.2s var(--ease-soft);
+}
+
+.message-tool:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.message-tool.is-feedback {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+@media (hover: none) {
+  .message-tools { opacity: 0.8; }
+}
+
+.app.reduced .message-tools,
+html[data-reduced='true'] .message-tools {
+  opacity: 0.85;
+  transition: none;
+}

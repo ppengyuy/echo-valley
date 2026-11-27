@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import { COPY } from '../copy';
 import type { MirrorStage } from '../types';
 import { PebbleIcon } from './PebbleIcon';
@@ -15,6 +15,8 @@ interface ComposerProps {
   onToggleQuiet?: () => void;
   /** 输入框上方「捡到一句话」轻入口，粘贴别人的话进溪滩。 */
   onPickStone?: () => void;
+  /** 「再问一次」：把某条旧消息填回输入框。nonce 变化才触发，连点同一条也生效。 */
+  reuse?: { text: string; nonce: number } | null;
 }
 
 /** 入口图标：闭着眼的刘看山，呼应「今天不用说话」。 */
@@ -51,11 +53,27 @@ export function Composer({
   quietPanelOpen = false,
   onToggleQuiet,
   onPickStone,
+  reuse = null,
 }: ComposerProps) {
   const [text, setText] = useState('');
   const [silent, setSilent] = useState(false);
   const fallbackRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? fallbackRef;
+
+  // 旧消息回填：内容进输入框、光标落在末尾，并把高度撑开（长句不至于只露一行）。
+  useEffect(() => {
+    if (!reuse) return;
+    setText(reuse.text);
+    const frame = window.requestAnimationFrame(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [reuse?.nonce]);
 
   const submit = () => {
     const value = text.trim();

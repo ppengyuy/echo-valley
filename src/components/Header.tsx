@@ -1,4 +1,6 @@
+import { useSyncExternalStore } from 'react';
 import { COPY } from '../copy';
+import { hasRuntimeKey, snapshot, subscribe } from '../agent/runtimeModel';
 import type { Season } from '../types';
 import { Fox } from './Fox';
 import { MusicPlayer } from './MusicPlayer';
@@ -9,11 +11,22 @@ interface HeaderProps {
   reduced: boolean;
   onReduced: (value: boolean) => void;
   onRehearsal: () => void;
+  onModelSettings: () => void;
 }
 
 const SEASONS: Season[] = ['spring', 'summer', 'autumn', 'winter'];
 
-export function Header({ season, onSeason, reduced, onReduced, onRehearsal }: HeaderProps) {
+export function Header({
+  season,
+  onSeason,
+  reduced,
+  onReduced,
+  onRehearsal,
+  onModelSettings,
+}: HeaderProps) {
+  useSyncExternalStore(subscribe, snapshot, () => 'off');
+  const modelOn = hasRuntimeKey();
+
   return (
     <header className="topbar">
       <div className="brand">
@@ -55,6 +68,15 @@ export function Header({ season, onSeason, reduced, onReduced, onRehearsal }: He
           />
           <span>{COPY.motionToggle}</span>
         </label>
+
+        <button
+          type="button"
+          className={`text-button model-link ${modelOn ? 'is-on' : ''}`}
+          onClick={onModelSettings}
+          aria-label={modelOn ? COPY.modelButtonOn : COPY.modelButton}
+        >
+          {modelOn ? COPY.modelButtonOn : COPY.modelButton}
+        </button>
 
         <button type="button" className="text-button rehearsal-link" onClick={onRehearsal}>
           {COPY.rehearsal}

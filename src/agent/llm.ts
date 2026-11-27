@@ -2,6 +2,7 @@ import type { ChatMessage } from '../types';
 import { FALLBACKS } from '../data/fallbacks';
 import { checkReply } from './guard';
 import { LIUKANSHAN_SYSTEM_PROMPT } from './systemPrompt';
+import { callSiliconFlow, hasRuntimeKey } from './runtimeModel';
 
 /**
  * 知乎直答（开发者 API）。
@@ -16,8 +17,12 @@ const configured = (import.meta.env.VITE_ZHIDA_ENABLED as string | undefined) ==
 const model =
   (import.meta.env.VITE_ZHIDA_MODEL as string | undefined)?.trim() || 'zhida-fast-1p5';
 
+/**
+ * 是否有可用模型通道：运行时填入的硅基流动密钥，或构建时配好的知乎直答。
+ * 两者都没有时走本地引擎——这是默认状态，也是纯静态部署的状态。
+ */
 export function llmConfigured(): boolean {
-  return configured;
+  return hasRuntimeKey() || configured;
 }
 
 type WireMessage = {
@@ -47,6 +52,14 @@ export function recentlyRateLimited(windowMs = 30000): boolean {
 }
 
 async function requestReply(messages: WireMessage[]): Promise<string | null> {
+  // 运行时通道优先：用户在界面里填的硅基流动密钥（只在内存）。
+  // 密钥为空或请求失败时，下面继续走知乎直答，再不行由本地引擎接住。
+  if (hasRuntimeKey()) {
+    const result = await callSiliconFlow(messages);
+    if (result.text) return result.text;
+    return null;
+  }
+
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 20000);
 

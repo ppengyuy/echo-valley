@@ -19,6 +19,7 @@ import { EchoModal } from './components/EchoModal';
 import type { EchoSection } from './components/EchoList';
 import { Header } from './components/Header';
 import { Modal } from './components/Modal';
+import { ModelSettingsModal } from './components/ModelSettingsModal';
 import { PickStoneModal } from './components/PickStoneModal';
 import { PathPanel } from './components/PathPanel';
 import { PlanWizard } from './components/PlanWizard';
@@ -61,6 +62,7 @@ export default function App() {
   const [textOpen, setTextOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [rehearsalOpen, setRehearsalOpen] = useState(false);
+  const [modelSettingsOpen, setModelSettingsOpen] = useState(false);
   const [quietPanelOpen, setQuietPanelOpen] = useState(false);
   const [quietMode, setQuietMode] = useState<QuietMode>('off');
   const [exportError, setExportError] = useState(0);
@@ -797,6 +799,7 @@ export default function App() {
           reduced={state.reducedMotion}
           onReduced={(value) => dispatch({ type: 'SET_REDUCED', value })}
           onRehearsal={() => setRehearsalOpen(true)}
+          onModelSettings={() => setModelSettingsOpen(true)}
         />
 
         <main className={`split mobile-${mobileView}`}>
@@ -906,6 +909,8 @@ export default function App() {
       </div>
 
       <PrintSheets plan={state.plan} />
+
+      <ModelSettingsModal open={modelSettingsOpen} onClose={() => setModelSettingsOpen(false)} />
 
       <PlanWizard
         open={planOpen}

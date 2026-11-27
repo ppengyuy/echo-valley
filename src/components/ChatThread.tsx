@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { COPY } from '../copy';
 import type { ChatMessage, EchoOffer, MirrorInvite, MirrorStage } from '../types';
 import { Fox } from './Fox';
@@ -15,6 +15,50 @@ interface ChatThreadProps {
   onSilentKeep: () => void;
   onAcceptMirror: () => void;
   onDeclineMirror: () => void;
+  /** 把自己说过的话放回输入框，改一改再问一次。 */
+  onReuse?: (text: string) => void;
+}
+
+/**
+ * 复制一段文字。
+ *
+ * 优先用 Clipboard API；站内托管 / 非安全上下文 / iframe 里它常被权限策略挡下，
+ * 所以带一层 execCommand 兜底。降级方案会先记下并恢复用户原本的选区，
+ * 不会把人家正在拖选的文字冲掉。
+ */
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // 继续走兜底。
+    }
+  }
+
+  const selection = document.getSelection();
+  const saved = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, ta.value.length);
+
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {
+    ok = false;
+  }
+  document.body.removeChild(ta);
+
+  if (selection && saved) {
+    selection.removeAllRanges();
+    selection.addRange(saved);
+  }
+  return ok;
 }
 
 export function ChatThread({
@@ -29,12 +73,29 @@ export function ChatThread({
   onSilentKeep,
   onAcceptMirror,
   onDeclineMirror,
+  onReuse,
 }: ChatThreadProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null);
+  const copyTimer = useRef<number | null>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length, offer, mirrorInvite, typing]);
+
+  useEffect(
+    () => () => {
+      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    },
+    [],
+  );
+
+  const handleCopy = async (id: string, text: string) => {
+    const ok = await copyText(text);
+    setCopied({ id, ok });
+    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(() => setCopied(null), 1900);
+  };
 
   return (
     <div className="thread" role="log" aria-live="polite" aria-label="回音谷里的对话">
@@ -51,6 +112,32 @@ export function ChatThread({
               <p className="weather-line">{COPY.weather[message.weather.kind]}</p>
             ) : null}
             <div className={`bubble ${message.role} ${message.quiet ? 'is-quiet' : ''}`}>{message.text}</div>
+            <div className="message-tools">
+              <button
+                type="button"
+                className={`message-tool ${copied?.id === message.id ? 'is-feedback' : ''}`}
+                onClick={() => void handleCopy(message.id, message.text)}
+                title={COPY.messageCopyTitle}
+                aria-label={COPY.messageCopyTitle}
+              >
+                {copied?.id === message.id
+                  ? copied.ok
+                    ? COPY.messageCopied
+                    : COPY.messageCopyFail
+                  : COPY.messageCopy}
+              </button>
+              {message.role === 'user' && onReuse ? (
+                <button
+                  type="button"
+                  className="message-tool"
+                  onClick={() => onReuse(message.text)}
+                  title={COPY.messageReuseTitle}
+                  aria-label={COPY.messageReuseTitle}
+                >
+                  {COPY.messageReuse}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ))}
