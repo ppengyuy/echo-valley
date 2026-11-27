@@ -75,7 +75,8 @@
 
 - 浏览器仍请求同源 `/api/zhida/v1/chat/completions`，前端代码**不用改**。
 - `server.mjs` 在 Node 侧读取 `ZHIDA_ACCESS_SECRET`，补上 `Authorization: Bearer ...` 与 `X-Request-Timestamp` 后转发；密钥**不进浏览器 bundle**。
-- 聊天对话仍由用户自己填的硅基流动 Key 驱动；「参考一点经验」「借一句别人的话」走这条知乎直答代理——正好是你要的分工。
+- 已按用途分流：陪伴对话优先用用户自己填的硅基流动 Key；「参考一点经验」「借一句别人的话」优先走知乎直答，只有直答失败/未配置时才退回本地池，不会被硅基流动顶替。
+- 仓库里的 `.env.production` 只含公开开关 `VITE_ZHIDA_ENABLED=true` 与模型名，**不含密钥**；它让生产构建启用直答通道。纯静态部署若保留它而服务端没有代理，会自动回退本地，不影响使用。
 
 ### 本地验证
 

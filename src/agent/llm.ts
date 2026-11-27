@@ -51,14 +51,21 @@ export function recentlyRateLimited(windowMs = 30000): boolean {
   return rateLimitedAt > 0 && Date.now() - rateLimitedAt < windowMs;
 }
 
-async function requestReply(messages: WireMessage[]): Promise<string | null> {
-  // 运行时通道优先：用户在界面里填的硅基流动密钥（只在内存）。
-  // 密钥为空或请求失败时，下面继续走知乎直答，再不行由本地引擎接住。
-  if (hasRuntimeKey()) {
+async function requestReply(
+  messages: WireMessage[],
+  options: { preferZhida?: boolean } = {},
+): Promise<string | null> {
+  // 用途分流：
+  // - 陪伴对话用用户填的硅基流动 Key（只在内存）；
+  // - 「参考一点经验」「借一句别人的话」优先走知乎直答，保留知乎生态来源。
+  // 只有构建时启用了直答，preferZhida 才会强制走它；否则仍可用运行时 Key。
+  const preferZhida = options.preferZhida === true && configured;
+  if (!preferZhida && hasRuntimeKey()) {
     const result = await callSiliconFlow(messages);
     if (result.text) return result.text;
     return null;
   }
+  if (!configured) return null;
 
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 20000);
@@ -214,13 +221,16 @@ export async function generateCandidateText(
     ? `\n下面这些已经给过，请避开，换一些别的：\n${excludeList.join('\n')}`
     : '';
 
-  const raw = await requestReply([
-    { role: 'system', content: CANDIDATE_GUARD },
-    {
-      role: 'user',
-      content: `这位备考者想靠近的方向是：${goal}${stageLine}\n请给出这个方向下常见的备考动作，给 10–15 条，每行一件，不要编号。${excludeLine}`,
-    },
-  ]);
+  const raw = await requestReply(
+    [
+      { role: 'system', content: CANDIDATE_GUARD },
+      {
+        role: 'user',
+        content: `这位备考者想靠近的方向是：${goal}${stageLine}\n请给出这个方向下常见的备考动作，给 10–15 条，每行一件，不要编号。${excludeLine}`,
+      },
+    ],
+    { preferZhida: true },
+  );
   if (!raw) return null;
   const lines = raw
     .split(/\r?\n/)
@@ -247,10 +257,13 @@ const QUOTE_GUARD = `你在找备考者写下的真实经历原句，当作"同�
 
 export async function generateQuoteText(bucketKeyword: string): Promise<string | null> {
   if (!llmConfigured()) return null;
-  const raw = await requestReply([
-    { role: 'system', content: QUOTE_GUARD },
-    { role: 'user', content: `知乎 备考 ${bucketKeyword} 第一人称 经历 当时` },
-  ]);
+  const raw = await requestReply(
+    [
+      { role: 'system', content: QUOTE_GUARD },
+      { role: 'user', content: `知乎 备考 ${bucketKeyword} 第一人称 经历 当时` },
+    ],
+    { preferZhida: true },
+  );
   if (!raw) return null;
   const lines = raw
     .split(/\r?\n/)
@@ -437,22 +450,25 @@ export async function generateQuoteBatch(
 ): Promise<string | null> {
   if (!llmConfigured()) return null;
   const avoid = exclude.slice(-30);
-  const raw = await requestReply([
-    { role: 'system', content: QUOTE_BATCH_GUARD(asked) },
-    {
-      role: 'user',
-      content: [
-        `去知乎翻备考相关的问答和经历分享，只抄**心里的话**——担心什么、怕什么、卡在哪里、什么时候最难受。`,
-        `不要抄学习方法、用什么资料、报什么班、考多少分。这些不是这里要的。`,
-        `注意：是抄别人怎么说，不是你来总结。每条都要能看出是谁、在什么处境里、心里冒出什么念头。`,
-        `抄 ${asked} 条，每条 18–70 字，一条一行，不要编号。`,
-        `别每句都用"我"开头，也别写"计划表排得太满就会塌方"这种没人称的总结。`,
-        avoid.length ? `下面这些已经抄过了，不要再出现或改写它们：\n${avoid.join('\n')}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n\n'),
-    },
-  ]);
+  const raw = await requestReply(
+    [
+      { role: 'system', content: QUOTE_BATCH_GUARD(asked) },
+      {
+        role: 'user',
+        content: [
+          `去知乎翻备考相关的问答和经历分享，只抄**心里的话**——担心什么、怕什么、卡在哪里、什么时候最难受。`,
+          `不要抄学习方法、用什么资料、报什么班、考多少分。这些不是这里要的。`,
+          `注意：是抄别人怎么说，不是你来总结。每条都要能看出是谁、在什么处境里、心里冒出什么念头。`,
+          `抄 ${asked} 条，每条 18–70 字，一条一行，不要编号。`,
+          `别每句都用"我"开头，也别写"计划表排得太满就会塌方"这种没人称的总结。`,
+          avoid.length ? `下面这些已经抄过了，不要再出现或改写它们：\n${avoid.join('\n')}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
+      },
+    ],
+    { preferZhida: true },
+  );
   if (!raw) return null;
   const lines = raw
     .split(/\r?\n/)
