@@ -11,7 +11,7 @@
 
 ## 技术栈
 
-Vite + React + TypeScript；纯前端，无后端、无数据库。会话数据存浏览器 `sessionStorage`；可选接入知乎直答（本地开发代理）或硅基流动（用户自填 Key）。
+Vite + React + TypeScript 前端，加一个 Node 内置模块写的 `server.mjs` 代理（仅转发知乎直答、托管 `dist/`）；无数据库。会话数据存浏览器 `sessionStorage`；对话可选硅基流动（用户自填 Key），经验/借句可走知乎直答。
 
 ## 核心机制
 
@@ -28,4 +28,4 @@ npm install
 npm run dev
 ```
 
-本地默认地址 `http://127.0.0.1:5178`；构建用 `npm run build`，产物在 `dist/`。
+本地默认地址 `http://127.0.0.1:5178`；构建用 `npm run build`，产物在 `dist/`。验证线上形态用 `PORT=3000 npm run start`（Node 托管 `dist/` 并代理 `/api/zhida`，需环境变量 `ZHIDA_ACCESS_SECRET`）。
