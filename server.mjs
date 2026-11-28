@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -58,14 +58,17 @@ function serveStatic(res, pathname) {
     return sendJson(res, 500, { error: { message: 'dist 不存在，请先 npm run build' } });
   }
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', MIME[extname(file).toLowerCase()] || 'application/octet-stream');
-  const stream = createReadStream(file);
-  stream.on('error', () => {
+  try {
+    // 云函数 HTTP 网关会截断流式 big body，整块读出一次性返回，避免白屏。
+    const body = readFileSync(file);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', MIME[extname(file).toLowerCase()] || 'application/octet-stream');
+    res.setHeader('Content-Length', String(body.length));
+    res.end(body);
+  } catch {
     if (!res.headersSent) sendJson(res, 500, { error: { message: 'read failed' } });
     else res.end();
-  });
-  stream.pipe(res);
+  }
 }
 
 async function proxyZhida(req, res) {

@@ -184,6 +184,14 @@ tcb fn deploy echo-valley --dir . --force -e 你的环境ID --httpFn --yes
 > ⚠️ **实战踩坑 3**：用 API 密钥登录的参数是 `--apiKey`（不是 `--apiKeySecret`）：
 > `tcb login --apiKeyId xxx --apiKey yyy`
 
+> ⚠️ **实战踩坑 4（会导致白屏）**：`server.mjs` 如果像常规 Node 服务那样用 `createReadStream` 流式返回静态文件，云函数 HTTP 网关会在流结束前断开，1.4MB 的 JS 只返回约 790KB，浏览器解析到一半就报错，**页面背景色出来但内容全空**。必须改成整块读取一次性返回：
+> ```js
+> const body = readFileSync(file);
+> res.setHeader('Content-Length', String(body.length));
+> res.end(body);
+> ```
+> 判断方法：`curl -s <JS地址> -o /tmp/r.js -w '%{size_download}'` 与本地 `dist/assets/*.js` 的字节数比对，不一致就是被截断了。
+
 **第 9 步：验证**
 
 浏览器打开第 8 步拿到的正式地址，依次确认：
