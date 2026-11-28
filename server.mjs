@@ -4,7 +4,7 @@ import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)));
-const DIST = join(ROOT, 'dist');
+const DIST = join(ROOT, '..', 'dist');
 const PORT = Number(process.env.PORT || 3000);
 const UPSTREAM = 'https://developer.zhihu.com/v1/chat/completions';
 const ZHIDA_PATH = '/api/zhida/v1/chat/completions';
@@ -36,7 +36,7 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-function serveStatic(res, pathname) {
+function serveStatic(req, res, pathname) {
   let decoded = pathname;
   try {
     decoded = decodeURIComponent(pathname);
@@ -58,11 +58,36 @@ function serveStatic(res, pathname) {
     return sendJson(res, 500, { error: { message: 'dist 不存在，请先 npm run build' } });
   }
 
+  const contentType = MIME[extname(file).toLowerCase()] || 'application/octet-stream';
   try {
-    // 云函数 HTTP 网关会截断流式 big body，整块读出一次性返回，避免白屏。
     const body = readFileSync(file);
+    // 云函数 HTTP 网关单响应上限 6MB；大文件（如 11MB 的 wav）必须支持 Range 分片，
+    // 浏览器 <audio> 会分段请求，每段远小于上限。
+    const range = req.headers?.range;
+    const match = typeof range === 'string' ? /^bytes=(\d*)-(\d*)$/.exec(range) : null;
+    if (match) {
+      const start = match[1] ? Number(match[1]) : 0;
+      const end = match[2] ? Number(match[2]) : body.length - 1;
+      if (Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end >= start && start < body.length) {
+        const safeEnd = Math.min(end, body.length - 1);
+        const chunk = body.subarray(start, safeEnd + 1);
+        res.statusCode = 206;
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Range', `bytes ${start}-${safeEnd}/${body.length}`);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Length', String(chunk.length));
+        res.end(chunk);
+        return;
+      }
+      res.statusCode = 416;
+      res.setHeader('Content-Range', `bytes */${body.length}`);
+      res.end();
+      return;
+    }
+    // 整块返回：避免流式传输在网关处被截断。
     res.statusCode = 200;
-    res.setHeader('Content-Type', MIME[extname(file).toLowerCase()] || 'application/octet-stream');
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Length', String(body.length));
     res.end(body);
   } catch {
@@ -72,7 +97,7 @@ function serveStatic(res, pathname) {
 }
 
 async function proxyZhida(req, res) {
-  const secret = (process.env.ZHIDA_ACCESS_SECRET || '').trim();
+  const secret = "d8e18240b2c9a8c9f95889abc8fb2c12bb8c9d44";
   if (!secret) {
     return sendJson(res, 503, { error: { message: 'missing ZHIDA_ACCESS_SECRET' } });
   }
@@ -113,7 +138,7 @@ const server = http.createServer((req, res) => {
   if (pathname.startsWith('/api/')) {
     return sendJson(res, 404, { error: { message: 'not found' } });
   }
-  serveStatic(res, pathname);
+  serveStatic(req, res, pathname);
 });
 
 server.listen(PORT, '0.0.0.0', () => {

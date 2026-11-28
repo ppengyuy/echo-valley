@@ -192,6 +192,10 @@ tcb fn deploy echo-valley --dir . --force -e 你的环境ID --httpFn --yes
 > ```
 > 判断方法：`curl -s <JS地址> -o /tmp/r.js -w '%{size_download}'` 与本地 `dist/assets/*.js` 的字节数比对，不一致就是被截断了。
 
+> ⚠️ **实战踩坑 5（音频播不了）**：两个独立原因：
+> 1. **路径前缀**：音乐库 `src/data/music.ts` 里若硬编码 `/audio/xxx.ogg`，部署到 `/echo-valley` 子路径下会 404。改用 `import.meta.env.BASE_URL` 拼接：`\${import.meta.env.BASE_URL}audio/${file}`（本地是 `/`、线上是 `/echo-valley/`，两边都对）。
+> 2. **6MB 响应上限**：云函数网关单次响应上限 6MB，11.6MB 的 wav 直接返回会得到 `406 The size of HTTP response body exceeds the upper limit (6MB)`。服务端 `serveStatic` 必须支持 HTTP Range：`req.headers.range` 解析出起止位置，返回 `206` + `Content-Range` + 分片 body。浏览器 `<audio>` 会自动分段请求。验证：`curl -H 'Range: bytes=0-1048575' <音频地址>` 应返回 `206` 和 1048576 字节。
+
 **第 9 步：验证**
 
 浏览器打开第 8 步拿到的正式地址，依次确认：

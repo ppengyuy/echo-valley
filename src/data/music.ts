@@ -22,6 +22,13 @@ export interface Track {
   ambient: boolean;
 }
 
+/**
+ * 音频放在 public/audio 下，构建后位于站点根。
+ * 用 Vite 的 BASE_URL 拼接，本地开发是 '/'，部署到子路径（如 /echo-valley/）时自动带前缀，
+ * 避免浏览器请求 /audio/... 被网关 404。
+ */
+const audioSrc = (file: string): string => `${import.meta.env.BASE_URL}audio/${file}`;
+
 export const MUSIC_TRACKS: Track[] = [
   // 山谷舒缓：低密度环境音，适合沉淀、背书、平复焦虑。
   {
@@ -29,7 +36,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '雨落屋檐',
     desc: '雨声落在屋檐上，把杂念轻轻盖住',
     group: 'calm',
-    src: '/audio/rain-on-veranda.ogg',
+    src: audioSrc('rain-on-veranda.ogg'),
     ambient: true,
   },
   {
@@ -37,7 +44,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '林间有风',
     desc: '远处的风穿过树林，像坐在山里',
     group: 'calm',
-    src: '/audio/forest-ambience.ogg',
+    src: audioSrc('forest-ambience.ogg'),
     ambient: true,
   },
   {
@@ -45,7 +52,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '浅溪碎石',
     desc: '水声漫过碎石，走走停停都没关系',
     group: 'calm',
-    src: '/audio/shallow-river.ogg',
+    src: audioSrc('shallow-river.ogg'),
     ambient: true,
   },
   {
@@ -53,7 +60,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '夜色原野',
     desc: '夜里很轻的底噪，陪你把心放下来',
     group: 'calm',
-    src: '/audio/country-night.ogg',
+    src: audioSrc('country-night.ogg'),
     ambient: true,
   },
   {
@@ -61,7 +68,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '远岸潮声',
     desc: '潮水一遍遍漫上石滩，节奏很慢',
     group: 'calm',
-    src: '/audio/pebble-beach.ogg',
+    src: audioSrc('pebble-beach.ogg'),
     ambient: true,
   },
   // 山间向前：温和纯音，适合想稳稳往前走时。
@@ -70,7 +77,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '慢慢向前',
     desc: '平稳温和的琴声，不催你，只是陪着走',
     group: 'forward',
-    src: '/audio/relaxing-piano.wav',
+    src: audioSrc('relaxing-piano.wav'),
     ambient: false,
   },
   {
@@ -78,7 +85,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '清晨琴声',
     desc: '一段清亮的旧钢琴，像刚醒来的早晨',
     group: 'forward',
-    src: '/audio/pleasant-moments.ogg',
+    src: audioSrc('pleasant-moments.ogg'),
     ambient: false,
   },
   {
@@ -86,7 +93,7 @@ export const MUSIC_TRACKS: Track[] = [
     name: '木吉他暖',
     desc: '手指拨过琴弦，暖暖的，不慌不忙',
     group: 'forward',
-    src: '/audio/guitar-warm.ogg',
+    src: audioSrc('guitar-warm.ogg'),
     ambient: false,
   },
 ];
