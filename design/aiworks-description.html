@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>回音谷 · AI Works 项目说明（可复制排版版）</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 32px 80px;
+    background: #f6f8f3;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: #313d35;
+  }
+  #guide {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: -24px -32px 28px;
+    padding: 14px 32px;
+    background: #41624f;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.7;
+    user-select: none;
+  }
+  #guide b { color: #d9efd6; }
+  #article {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 56px;
+    background: #fff;
+    border: 1px solid #e3ebe0;
+    border-radius: 12px;
+    font-size: 16px;
+    line-height: 1.9;
+  }
+  #article h2 { font-size: 26px; color: #294334; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 2px solid #dcebdD; }
+  #article h2:first-child { margin-top: 0; font-size: 30px; border-bottom: none; }
+  #article h3 { font-size: 19px; color: #41624f; margin: 26px 0 10px; }
+  #article p { margin: 10px 0; }
+  #article ul { margin: 10px 0 18px; padding-left: 26px; }
+  #article li { margin: 6px 0; }
+  #article strong { color: #294334; }
+  #article a { color: #246b45; word-break: break-all; }
+  #article .marker { background: #fff6d8; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="guide">
+  <b>用法：</b>打开本文件 → 从大标题开始选中正文（图中的绿色提示条不会复制）→ 复制 → 粘贴到 AI Works「项目说明」编辑器。标题、加粗、列表和链接会带过去；<b>封面图</b>请在粘贴后点编辑器工具栏「图片」手动上传 `cover.png`，并删掉正文里的黄色占位文字。
+</div>
+
+<article id="article">
+  <h2>回音谷：把说不出口的情绪留在山谷里</h2>
+
+  <p>回音谷是面向备考学生的 AI 陪伴原型。依托知乎 IP 刘看山，用「山间小路」承载柔性学习计划，用「回音谷」承接情绪、感悟与自我觉察。不搜题、不解题、不做心理咨询。</p>
+
+  <p class="marker">【在此处点击工具栏「图片」上传 cover.png，并删除本行】</p>
+
+  <h3>一、为什么做</h3>
+
+  <p>备考学生大量出现在知乎的提问、回答和专栏里，他们分享的不是「怎么学」的单一问题，而是一组彼此缠绕的困境：</p>
+
+  <ul>
+    <li>不敢向熟人倾诉，怕家里失望；</li>
+    <li>计划一断就自责，越焦虑越学不进去；</li>
+    <li>读书或刷到观点时有感触，却记了也不回看；</li>
+    <li>休息时有负罪感，被打卡和完成率压迫；</li>
+    <li>对 AI「心灵鸡汤」「说教味」「假理解」高度反感。</li>
+  </ul>
+
+  <p>需求证据来自我们 2026-11-22 做的定向调研：17 组关键词、136 条内容（去重 125 条），人工甄别后精选 32 条作为证据底稿，素材均已脱敏。现有产品要么偏向刷题提分，要么偏向心理诊断，要么用打卡和排行榜制造新的压迫感。备考学生需要一个不带评判、不催促进度、能安静接住情绪的地方。</p>
+
+  <h3>二、产品怎么做</h3>
+
+  <ul>
+    <li><strong>双线叙事：</strong>「山间小路」只放目标、节点与当日任务；「回音谷」只承接情绪与感悟。两条线只在用户主动复盘时并置，解释权归用户。</li>
+    <li><strong>回音机制：</strong>用户说出或写下的一段主观感受，经本人确认后才存入山谷；唤起时只带回原话，不分析、不比较、不下结论。可逐条聆听、归档、让回音消散或一键清空。</li>
+    <li><strong>今天不想说话：</strong>提供免回应入口「借一句别人的话」，按备考烦恼分批呈现、可换下一批，也能挑一句写给自己。</li>
+    <li><strong>参考一点经验：</strong>制定计划时按方向、按阶段拉取一组「别人常做的备考动作」作为候选项，勾选后才进入任务框，绝不自动插入。</li>
+    <li><strong>柔性计划与导出：</strong>由目标、任务、时间边界和每日可投入量确定性生成，可随时删减超负荷任务；提供 CSV、Excel、打印手写版三套导出。</li>
+    <li><strong>刘看山在场感：</strong>沿用简笔造型与安静、好奇、包容的人设，用微动作、擦雾、脚印与溪边石子建立陪伴感，不做游戏化奖励。</li>
+  </ul>
+
+  <h3>三、与知乎社区生态的契合</h3>
+
+  <ul>
+    <li><strong>原生 IP：</strong>刘看山的安静、好奇、包容与「不评判、不催促」的产品定位天然一致，人设约束了对话风格、视觉动效和边界表达，而不是把 IP 当装饰。</li>
+    <li><strong>从知乎真实声音里长出来：</strong>痛点、话术红线和核心场景都对应知乎用户的第一人称表达，不是凭空设想。</li>
+    <li><strong>用知乎能力但不越界：</strong>「参考一点经验」「借一句别人的话」优先走知乎直答，让社区里的经验与表达成为陪伴的一部分；同时不批量抓取用户内容、不解析知乎原文、不输出标准答案、不冒充具体用户的原话。</li>
+    <li><strong>场景价值：</strong>对用户，是高压备考期一个无评判、无考核、无推送的情绪安放空间；对知乎，把社区沉淀的真实经验转化为可体验的陪伴场景，让刘看山从内容符号变成可交互的陪伴者；对赛道，验证「情绪承接 + 自我觉察 + 柔性规划」这一中间地带。</li>
+  </ul>
+
+  <h3>四、技术实现</h3>
+
+  <ul>
+    <li><strong>前端：</strong>React + TypeScript + Vite；数据只存浏览器 sessionStorage，无数据库、无云端持久化，关闭标签页即散。</li>
+    <li><strong>模型按用途分流：</strong>陪伴对话走用户自填的硅基流动免费模型；「参考一点经验」「借一句别人的话」优先走知乎直答，由 Node 代理在服务端注入密钥；任一通道失败自动回退本地，不打断体验。</li>
+    <li><strong>密钥安全：</strong>硅基流动 Key 只存页面 JS 内存，刷新即清，不写本地存储、不上传、不进代码与仓库；知乎密钥由平台环境变量注入 Node 侧，不进浏览器 bundle、不进源码、不进上传包。</li>
+    <li><strong>风险与隐私：</strong>关键词黑名单 + 系统提示词双层拦截，命中危机信号时切换预置兜底话术；不收集姓名、联系方式、学校、地区等敏感信息；导出文件不含真实姓名、会话 ID、设备信息或 API Key。</li>
+    <li><strong>部署：</strong>以「前端 + Node 后端、无数据库写入」形态发布到 AI Works，<code>npm run build</code> 构建，<code>server.mjs</code> 托管产物并监听平台注入的 <code>PORT</code>。</li>
+  </ul>
+
+  <h3>五、如何体验</h3>
+
+  <ul>
+    <li>完整源码与工程规范：<a href="https://github.com/ppengyuy/echo-valley">https://github.com/ppengyuy/echo-valley</a></li>
+    <li>本地运行：<code>npm install &amp;&amp; npm run dev</code>，默认 http://127.0.0.1:5178</li>
+    <li>模型接入为可选项：不配 Key 也能完整体验本地话术与内置内容池；点页面顶部「接入模型」可自行申请并粘贴硅基流动 Key。</li>
+  </ul>
+
+  <h3>六、边界与局限</h3>
+
+  <ul>
+    <li>调研为公开社区关键词检索，非随机抽样，结论不可外推。</li>
+    <li>风险识别仅用于演示层面防护，不能替代专业危机筛查。</li>
+    <li>记忆仅会话内生效，不做跨会话长期记忆与语义关联，这是主动取舍。</li>
+    <li>原型面向单人演示，不支持高并发；不是医疗器械或心理治疗，不能替代专业心理支持。</li>
+  </ul>
+</article>
+</body>
+</html>

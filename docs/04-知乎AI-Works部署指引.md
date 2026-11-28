@@ -40,8 +40,8 @@
 
 打包时注意（对应上面的安全铁律）：
 
-- 包含：`index.html`、`package.json`、`package-lock.json`、`vite.config.ts`、`tsconfig.json`、`server.mjs`、`src/`、`public/`、必要的文档与示例配置 `.env.example`。
-- **排除**：`.env`（真实密钥）、`node_modules/`、`dist/`、`.git/`、`.workbuddy/`、`.box-agent*/`、`*.genie`、`demo-site/`（演示视频，与运行无关）。
+- 包含：`index.html`、`package.json`、`package-lock.json`、`vite.config.ts`、`tsconfig.json`、`server.mjs`、`src/`、`public/`、必要的文档与示例配置 `.env.example`，以及 `.env.production`（只含公开开关 `VITE_ZHIDA_ENABLED`，用于启用直答通道，**不含任何密钥**）。
+- **排除**：`.env`（真实密钥）、`node_modules/`、`dist/`、`.git/`、`.workbuddy/`、`.box-agent*/`、`*.genie`、`demo-site/`、`frontend/`（早期残留副本）、`design/`（封面设计稿）、`cover*.png`（封面单独在表单上传）。
 
 ### 4）观察构建状态，失败就交回 Agent 修
 
@@ -129,7 +129,7 @@ curl -X POST http://127.0.0.1:3000/api/zhida/v1/chat/completions \
 ## 四、上传前自检清单
 
 - [ ] `npm run build` 本地通过
-- [ ] 打包不含 `.env`、`.env.*`（`.env.example` 除外）
+- [ ] 打包不含真实密钥 `.env`；包含 `.env.example` 与只含公开开关的 `.env.production`
 - [ ] 打包不含 `node_modules/`、`dist/`、`.git/`、`.workbuddy/`、`.box-agent*/`、`*.genie`、`demo-site/`
 - [ ] 全项目搜索 `sk-` 开头字符串，只有 `.env`（未上传）里出现
 - [ ] 全栈模式确认平台生成 `backend.deploy.json`；启动 `npm run start`，`server.mjs` 监听 `0.0.0.0:${PORT:-3000}`
