@@ -97,7 +97,7 @@ function serveStatic(req, res, pathname) {
 }
 
 async function proxyZhida(req, res) {
-  const secret = "d8e18240b2c9a8c9f95889abc8fb2c12bb8c9d44";
+  const secret = process.env.ZHIDA_ACCESS_SECRET;
   if (!secret) {
     return sendJson(res, 503, { error: { message: 'missing ZHIDA_ACCESS_SECRET' } });
   }
