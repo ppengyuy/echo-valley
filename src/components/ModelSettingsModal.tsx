@@ -15,6 +15,7 @@ import {
   testSiliconFlow,
 } from '../agent/runtimeModel';
 import { Modal } from './Modal';
+import JellyRadio from '../motion/JellyRadio.jsx';
 
 interface ModelSettingsModalProps {
   open: boolean;
@@ -134,19 +135,19 @@ export function ModelSettingsModal({ open, onClose }: ModelSettingsModalProps) {
 
       <div className="model-field">
         <span>{COPY.modelChooseLabel}</span>
-        <div className="model-options" role="group">
-          {FREE_MODELS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`model-option ${!custom && model === item.id ? 'is-on' : ''}`}
-              aria-pressed={!custom && model === item.id}
-              onClick={() => chooseModel(item.id)}
-            >
-              <strong>{item.label}</strong>
-              <small>{item.note}</small>
-            </button>
-          ))}
+        <div className="model-options">
+          <JellyRadio
+            items={FREE_MODELS.map((item) => ({ value: item.id, label: item.label }))}
+            value={custom ? '' : model}
+            onChange={(next: any) => chooseModel(next)}
+            size="md"
+            ariaLabel={COPY.modelChooseLabel}
+            swell={0.1}
+            gap={8}
+          />
+          <p className="model-option-note">
+            {FREE_MODELS.find((item) => item.id === model)?.note ?? ''}
+          </p>
         </div>
         <label className="model-custom">
           <span>{COPY.modelCustomLabel}</span>

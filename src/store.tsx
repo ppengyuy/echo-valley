@@ -1,13 +1,27 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   type Dispatch,
   type ReactNode,
 } from 'react';
 import { FALLBACKS } from './data/fallbacks';
+import {
+  clearSessionData,
+  getMode,
+  readEchoes,
+  readPlan,
+  setMode as persistMode,
+  wipeAll,
+  writeEchoes,
+  writePlan,
+  type StorageMode,
+} from './persist';
 import { syncSummaries } from './plan/edit';
 import type {
   ChatMessage,
@@ -32,6 +46,8 @@ export interface ValleyState {
   /** 溪边的石子：别人的话，与回音完全隔离。 */
   stones: Stone[];
   plan: Plan | null;
+  /** 是否已经从存储层读出回音与小路；读完才允许写回，避免空状态覆盖旧数据。 */
+  hydrated: boolean;
   offer: EchoOffer | null;
   mirrorInvite: MirrorInvite | null;
   mirrorStage: MirrorStage;
@@ -70,6 +86,7 @@ export function initialState(): ValleyState {
     echoes: [],
     stones: [],
     plan: null,
+    hydrated: false,
     offer: null,
     mirrorInvite: null,
     mirrorStage: 'idle',
@@ -118,12 +135,22 @@ type Action =
   | { type: 'SET_RELATE_HINT'; newId: string; oldId: string }
   | { type: 'DISMISS_RELATE'; mute?: boolean }
   | { type: 'RESET' }
+  | { type: 'HYDRATE'; echoes: Echo[]; plan: Plan | null }
   | { type: 'LOAD'; state: ValleyState };
 
 function reducer(state: ValleyState, action: Action): ValleyState {
   switch (action.type) {
     case 'LOAD':
       return action.state;
+    case 'HYDRATE':
+      return {
+        ...state,
+        echoes: action.echoes,
+        plan: action.plan,
+        hydrated: true,
+        offer: null,
+        relateHint: null,
+      };
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.message], mirrorInvite: null };
     case 'SET_OFFER':
@@ -277,6 +304,7 @@ function reducer(state: ValleyState, action: Action): ValleyState {
     case 'RESET':
       return {
         ...initialState(),
+        hydrated: state.hydrated,
         season: state.season,
         reducedMotion: state.reducedMotion,
         toasts: [
@@ -303,6 +331,10 @@ function loadState(): ValleyState {
     return {
       ...base,
       ...parsed,
+      // 回音与小路由存储层（IndexedDB / sessionStorage）单独读写，这里不接。
+      echoes: [],
+      plan: null,
+      hydrated: false,
       messages,
       stones,
       toasts: [],
@@ -322,17 +354,86 @@ function loadState(): ValleyState {
 interface ValleyContextValue {
   state: ValleyState;
   dispatch: Dispatch<Action>;
+  /** 当前存储模式：默认本地珍藏。 */
+  mode: StorageMode;
+  switchMode: (next: StorageMode) => void;
+  /** 从存储层重新读一遍（导入备份、切换模式后用）。 */
+  reload: () => Promise<void>;
+  /** 全部回音消散：清空本地库与本次会话。 */
+  wipe: () => Promise<void>;
 }
 
 const ValleyContext = createContext<ValleyContextValue | null>(null);
 
 export function ValleyProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
+  const [mode, setModeState] = useState<StorageMode>(() => getMode());
+  const modeRef = useRef(mode);
+  /** 会话模式每次开新页都从零开始：进来先把上一次标签页里的残响清掉。 */
+  const clearedSession = useRef(false);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    let alive = true;
+    if (mode === 'session' && !clearedSession.current) {
+      clearSessionData();
+      clearedSession.current = true;
+    }
+    void (async () => {
+      const [echoes, plan] = await Promise.all([readEchoes(mode), readPlan(mode)]);
+      if (!alive) return;
+      dispatch({ type: 'HYDRATE', echoes, plan });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [mode]);
+
+  // 写回只在读完之后进行：避免首帧的空数组把旧珍藏覆盖掉。
+  useEffect(() => {
+    if (!state.hydrated) return;
+    void writeEchoes(mode, state.echoes);
+  }, [state.echoes, state.hydrated, mode]);
+
+  useEffect(() => {
+    if (!state.hydrated) return;
+    void writePlan(mode, state.plan);
+  }, [state.plan, state.hydrated, mode]);
+
+  const switchMode = useCallback((next: StorageMode) => {
+    // 切到会话：不动本地库，只是界面从此不再读它；本次会话重新开始。
+    if (next === 'session') clearSessionData();
+    persistMode(next);
+    setModeState(next);
+  }, []);
+
+  const reload = useCallback(async () => {
+    const [echoes, plan] = await Promise.all([readEchoes(modeRef.current), readPlan(modeRef.current)]);
+    dispatch({ type: 'HYDRATE', echoes, plan });
+  }, []);
+
+  const wipe = useCallback(async () => {
+    await wipeAll();
+    dispatch({ type: 'HYDRATE', echoes: [], plan: null });
+  }, []);
 
   useEffect(() => {
     try {
-      const { toasts, ...rest } = state;
+      // 回音与小路由存储层单独负责，快照里只留本次会话内的其他状态。
+      const {
+        toasts,
+        echoes: echoesRef,
+        plan: planRef,
+        hydrated: hydratedRef,
+        ...rest
+      } = state;
       void toasts;
+      void echoesRef;
+      void planRef;
+      void hydratedRef;
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...rest, version: 1 }));
     } catch {
       // 本次会话仍可继续，只是刷新后不一定保留。
@@ -344,7 +445,10 @@ export function ValleyProvider({ children }: { children: ReactNode }) {
     root.dataset.reduced = state.reducedMotion ? 'true' : 'false';
   }, [state.reducedMotion]);
 
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+  const value = useMemo(
+    () => ({ state, dispatch, mode, switchMode, reload, wipe }),
+    [state, mode, switchMode, reload, wipe],
+  );
 
   return <ValleyContext.Provider value={value}>{children}</ValleyContext.Provider>;
 }

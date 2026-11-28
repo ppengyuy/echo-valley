@@ -1,0 +1,71 @@
+/* Jelly Radio · 克制版 */
+.jr-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.jr-group:focus-visible {
+  outline: 2px solid rgba(111, 136, 120, 0.45);
+  outline-offset: 4px;
+}
+
+.jr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  justify-content: center;
+  padding: 0 0.95em;
+  border: 1px solid var(--line);
+  border-radius: var(--jr-radius, 18px);
+  background: var(--panel-soft, rgba(246, 248, 241, 0.72));
+  color: var(--ink-soft, #68736a);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  transform-origin: center;
+  transition: background 0.24s var(--ease-soft, ease), color 0.24s var(--ease-soft, ease),
+    border-color 0.24s var(--ease-soft, ease);
+}
+
+.jr-chip.is-active {
+  border-color: transparent;
+  background: var(--accent-soft, #e4ece2);
+  color: var(--accent-deep, #4e695a);
+  font-weight: 500;
+}
+
+.jr-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.jr-sm .jr-chip {
+  height: 28px;
+  font-size: 12px;
+  padding: 0 0.8em;
+}
+
+.jr-md .jr-chip {
+  height: 36px;
+  font-size: 13px;
+}
+
+.jr-lg .jr-chip {
+  height: 44px;
+  font-size: 14px;
+  padding: 0 1.1em;
+}
+
+.jr-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.92em;
+}
+
+@media (hover: hover) {
+  .jr-chip:hover:not(.is-active):not(:disabled) {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+}

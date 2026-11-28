@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../types';
-import { FALLBACKS } from '../data/fallbacks';
+import { FALLBACKS, wantsOptions } from '../data/fallbacks';
 import { checkReply } from './guard';
 import { LIUKANSHAN_SYSTEM_PROMPT } from './systemPrompt';
 import { callSiliconFlow, hasRuntimeKey } from './runtimeModel';
@@ -32,8 +32,8 @@ type WireMessage = {
 
 /** 直答模型容易滑回问答/教程腔，把格式要求跟用户原话放在同一条消息里更稳。 */
 const ZHIDA_STYLE_GUARD = `请只以刘看山的口吻回应下面这句话。
-只输出 2–5 句短句，先接住情绪，最多问一个问题。
-不要分析、不要列点、不要 Markdown、不要建议清单、不要复述原话、不要提界面或记录。`;
+先接住情绪；如果要往下走，只走一步：要么帮他把事实和心里的担心分开，要么在用户明确要办法时给一两条可走的路。只输出 2–5 句短句，最多问一个问题。
+不要分析成清单、不要列点、不要 Markdown、不要报流派或疗程、不要复述原话、不要提界面或记录。`;
 
 /**
  * 只发一次请求，失败返回 null。
@@ -143,11 +143,14 @@ export async function generateWithLlm(
   const last = recent[recent.length - 1];
   if (last && last.role === 'user' && last.content === userText) recent.pop();
 
+  // 用户明确要办法时，这一步只能给两条不同的走法；只给一条等于替他决定。
+  const askedOptions = wantsOptions(userText);
   let correction: string | undefined;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const userContent = [
       ZHIDA_STYLE_GUARD,
+      askedOptions ? '他现在明确要办法：请给出两条不同的走法，各说一句代价，再把选择交回去。' : '',
       correction ? `上一条回复被退回：${correction}` : '',
       `用户说：「${userText}」`,
     ]
@@ -164,18 +167,26 @@ export async function generateWithLlm(
     if (raw === null) return null;
 
     const checked = checkReply(raw);
-    if (checked.ok) {
+    const hasTwoRoutes = !askedOptions || /另一种|另一条/.test(checked.text);
+    if (checked.ok && hasTwoRoutes) {
       if (import.meta.env.DEV) console.info('[回音谷] 知乎直答回复已通过口吻检查');
       return checked.text;
     }
 
     if (import.meta.env.DEV) {
-      console.warn('[回音谷] 模型这句没通过口吻安检：', checked.reasons.join('；'), '\n原文：', raw);
+      console.warn(
+        '[回音谷] 模型这句没通过安检：',
+        checked.ok ? '只给了一条走法' : checked.reasons.join('；'),
+        '\n原文：',
+        raw,
+      );
     }
 
-    correction = `原因：${checked.reasons.join(
-      '；',
-    )}。请只回 2–5 句刘看山的口语，先接住情绪，不要分析、列点、Markdown、建议清单，也不要复述用户原话。`;
+    correction = checked.ok
+      ? '只给了一条走法。请说两条：先“一种走法是……”，再“另一种是……”，各带一句代价。'
+      : `原因：${checked.reasons.join(
+          '；',
+        )}。请只回 2–5 句刘看山的口语，先接住情绪，不要分析成清单、不要 Markdown，也不要复述用户原话。`;
   }
 
   if (import.meta.env.DEV) console.info('[回音谷] 知乎直答两次未通过，退回本地引擎');

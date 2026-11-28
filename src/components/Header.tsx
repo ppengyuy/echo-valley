@@ -4,6 +4,7 @@ import { hasRuntimeKey, snapshot, subscribe } from '../agent/runtimeModel';
 import type { Season } from '../types';
 import { Fox } from './Fox';
 import { MusicPlayer } from './MusicPlayer';
+import WarmTooltip from '../motion/WarmTooltip.jsx';
 
 interface HeaderProps {
   season: Season;
@@ -12,6 +13,8 @@ interface HeaderProps {
   onReduced: (value: boolean) => void;
   onRehearsal: () => void;
   onModelSettings: () => void;
+  onSettings: () => void;
+  onCalm: () => void;
 }
 
 const SEASONS: Season[] = ['spring', 'summer', 'autumn', 'winter'];
@@ -23,6 +26,8 @@ export function Header({
   onReduced,
   onRehearsal,
   onModelSettings,
+  onSettings,
+  onCalm,
 }: HeaderProps) {
   useSyncExternalStore(subscribe, snapshot, () => 'off');
   const modelOn = hasRuntimeKey();
@@ -42,45 +47,66 @@ export function Header({
       </div>
 
       <div className="top-actions">
-        <div className="season-switch" role="group" aria-label={COPY.seasonLabel}>
-          {SEASONS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`season-dot ${season === item ? 'is-on' : ''}`}
-              aria-pressed={season === item}
-              aria-label={`${COPY.seasonLabel}：${COPY.season[item]}`}
-              onClick={() => onSeason(item)}
-            >
-              {COPY.season[item]}
-            </button>
-          ))}
-        </div>
+        <WarmTooltip content="换一种天色" side="bottom">
+          <div className="season-switch" role="group" aria-label={COPY.seasonLabel}>
+            {SEASONS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`season-dot ${season === item ? 'is-on' : ''}`}
+                aria-pressed={season === item}
+                aria-label={`${COPY.seasonLabel}：${COPY.season[item]}`}
+                onClick={() => onSeason(item)}
+              >
+                {COPY.season[item]}
+              </button>
+            ))}
+          </div>
+        </WarmTooltip>
 
         <MusicPlayer />
 
-        <label className="motion-toggle">
-          <input
-            type="checkbox"
-            checked={reduced}
-            aria-label={COPY.motionToggle}
-            onChange={(event) => onReduced(event.target.checked)}
-          />
-          <span>{COPY.motionToggle}</span>
-        </label>
+        <WarmTooltip content="山雾与打字可以慢下来" side="bottom">
+          <label className="motion-toggle">
+            <input
+              type="checkbox"
+              checked={reduced}
+              aria-label={COPY.motionToggle}
+              onChange={(event) => onReduced(event.target.checked)}
+            />
+            <span>{COPY.motionToggle}</span>
+          </label>
+        </WarmTooltip>
 
-        <button
-          type="button"
-          className={`text-button model-link ${modelOn ? 'is-on' : ''}`}
-          onClick={onModelSettings}
-          aria-label={modelOn ? COPY.modelButtonOn : COPY.modelButton}
-        >
-          {modelOn ? COPY.modelButtonOn : COPY.modelButton}
-        </button>
+        <WarmTooltip content="用自己的模型陪聊" side="bottom">
+          <button
+            type="button"
+            className={`text-button model-link ${modelOn ? 'is-on' : ''}`}
+            onClick={onModelSettings}
+            aria-label={modelOn ? COPY.modelButtonOn : COPY.modelButton}
+          >
+            {modelOn ? COPY.modelButtonOn : COPY.modelButton}
+          </button>
+        </WarmTooltip>
 
-        <button type="button" className="text-button rehearsal-link" onClick={onRehearsal}>
-          {COPY.rehearsal}
-        </button>
+        <WarmTooltip content="路演用的假数据" side="bottom">
+          <button type="button" className="text-button rehearsal-link" onClick={onRehearsal}>
+            {COPY.rehearsal}
+          </button>
+        </WarmTooltip>
+
+        <div className="quiet-tools">
+          <WarmTooltip content="存储、备份、清空" side="bottom">
+            <button type="button" className="text-button small quiet-link" onClick={onSettings}>
+              设置
+            </button>
+          </WarmTooltip>
+          <WarmTooltip content="九个很小的练习" side="bottom">
+            <button type="button" className="text-button small quiet-link calm-link" onClick={onCalm}>
+              静一下心
+            </button>
+          </WarmTooltip>
+        </div>
 
         <details className="boundary">
           <summary>{COPY.boundaryMore}</summary>

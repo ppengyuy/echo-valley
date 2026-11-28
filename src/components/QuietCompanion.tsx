@@ -25,6 +25,8 @@ interface QuietCompanionProps {
   onListen: () => void;
   /** 危机表述：退出静默态并原样输出固定话术。 */
   onCrisis: (text: string) => void;
+  /** 静默态里给的一条出路：去静一下心挑个练习。 */
+  onCalm: () => void;
   /** 最近的用户消息（这一版暂不用于分批，保留接口以兼容调用方）。 */
   messages: ChatMessage[];
   reduced: boolean;
@@ -42,11 +44,9 @@ export function QuietCompanion({
   onWriteSelf,
   onListen,
   onCrisis,
+  onCalm,
   reduced,
 }: QuietCompanionProps) {
-  const [sitPrompt, setSitPrompt] = useState(false);
-  const sitTimer = useRef(0);
-  const sitRound = useRef(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // 方式 C：按批呈现的烦恼列表。每批 10 条，换批时整批替换。
@@ -145,28 +145,7 @@ export function QuietCompanion({
     void loadBatch(batchRound + 1);
   }, [batchRound, loadBatch]);
 
-  // 方式 A：进入后 90 秒浮现一次提示；点「接着待着」再等 90 秒，不叠加、不计数。
-  useEffect(() => {
-    if (mode !== 'sit') {
-      window.clearTimeout(sitTimer.current);
-      setSitPrompt(false);
-      sitRound.current = 0;
-      return;
-    }
-    const arm = () => {
-      window.clearTimeout(sitTimer.current);
-      sitTimer.current = window.setTimeout(() => setSitPrompt(true), 90000);
-    };
-    arm();
-    return () => window.clearTimeout(sitTimer.current);
-  }, [mode]);
-
-  const stayLonger = () => {
-    setSitPrompt(false);
-    sitRound.current += 1;
-    window.clearTimeout(sitTimer.current);
-    sitTimer.current = window.setTimeout(() => setSitPrompt(true), 90000);
-  };
+  // 方式 A 不再做「90 秒后才浮现出口」：那段时间里页面看着像卡死，人反而更慌。
 
   // 静默期间打字：检测危机词立即退出并输出固定话术；否则立即恢复正常对话，不评论。
   useEffect(() => {
@@ -280,23 +259,21 @@ export function QuietCompanion({
         </div>
       ) : null}
 
-      {/* 方式 A：静默陪伴态。对话区由外层 class 淡出，这里只承载山谷句子与提示。 */}
+      {/* 方式 A：静默陪伴态。对话区由外层 class 淡出，这里只承载山谷句子与去处。 */}
       {mode === 'sit' ? (
         <div className={`quiet-sit-layer ${reduced ? 'reduced' : ''}`} aria-live="polite">
-          <p className="quiet-sit-line">{COPY.quietSitFirst}</p>
-          {sitPrompt ? (
-            <div className="quiet-sit-prompt">
-              <span>{COPY.quietSitHint}</span>
-              <div className="quiet-sit-actions">
-                <button type="button" className="text-button small" onClick={stayLonger}>
-                  {COPY.quietSitStay}
-                </button>
-                <button type="button" className="text-button small" onClick={() => onMode('off')}>
-                  {COPY.quietSitStop}
-                </button>
-              </div>
+          <div className="quiet-sit-card">
+            <p className="quiet-sit-line">{COPY.quietSitFirst}</p>
+            <p className="quiet-sit-hint">{COPY.quietSitHint}</p>
+            <div className="quiet-sit-actions">
+              <button type="button" className="quiet-sit-calm" onClick={onCalm}>
+                {COPY.quietSitCalm}
+              </button>
+              <button type="button" className="text-button small" onClick={() => onMode('off')}>
+                {COPY.quietSitBack}
+              </button>
             </div>
-          ) : null}
+          </div>
         </div>
       ) : null}
 

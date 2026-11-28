@@ -1,0 +1,49 @@
+/* Flip Card · 克制版（两面各自转到 90° 交接，不做 3D 双面叠印） */
+.fc-wrap {
+  position: relative;
+  perspective: 1100px;
+  cursor: pointer;
+  outline: none;
+}
+
+.fc-wrap:focus-visible {
+  outline: 2px solid rgba(111, 136, 120, 0.5);
+  outline-offset: 4px;
+}
+
+.fc-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.fc-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  will-change: transform, opacity;
+}
+
+.fc-front {
+  z-index: 2;
+  background: var(--panel-strong, #fcfcf7);
+  border: 1px solid var(--line);
+}
+
+.fc-back {
+  z-index: 1;
+  background: var(--warm-soft, #f6f1e6);
+  border: 1px solid var(--line);
+}
+
+.fc-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}

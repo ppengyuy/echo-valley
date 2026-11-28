@@ -4,11 +4,13 @@ import { COPY } from '../copy';
 import type { ChatMessage, Echo, EchoOffer, MirrorInvite, MirrorStage, Season, Stone, WeatherKind } from '../types';
 import { ChatThread } from './ChatThread';
 import { Composer } from './Composer';
+import { EchoComposer, type EchoDraft } from './EchoComposer';
 import { EchoList, type EchoSection, type RelateHint } from './EchoList';
 import { Fox } from './Fox';
 import { QuietCompanion, type QuietMode } from './QuietCompanion';
 import { RippleOverlay } from './RippleOverlay';
 import { useIdle } from '../utils/useIdle';
+import SplitText from '../motion/SplitText.jsx';
 
 interface ValleyPanelProps {
   ripple: { text: string; key: number } | null;
@@ -53,6 +55,8 @@ interface ValleyPanelProps {
   onQuietWriteSelf: (text: string) => void;
   onQuietListen: () => void;
   onQuietCrisis: (text: string) => void;
+  /** 静默态里跳去「静一下心」。 */
+  onQuietCalm: () => void;
   reduced: boolean;
   // 溪边的石子
   echoSection: EchoSection;
@@ -70,6 +74,10 @@ interface ValleyPanelProps {
   onRelateSkip?: () => void;
   /** 输入框上方「捡到一句话」轻入口。 */
   onPickStone: () => void;
+  /** 练习带过来的可编辑草稿；确认后才成为正式回音。 */
+  echoDraft?: EchoDraft | null;
+  onEchoSave?: (text: string) => boolean;
+  onEchoDiscard?: () => void;
 }
 
 function FogPatch() {
@@ -184,6 +192,7 @@ export function ValleyPanel({
   onQuietWriteSelf,
   onQuietListen,
   onQuietCrisis,
+  onQuietCalm,
   reduced,
   echoSection,
   onEchoSection,
@@ -198,6 +207,9 @@ export function ValleyPanel({
   onRelateListen,
   onRelateSkip,
   onPickStone,
+  echoDraft = null,
+  onEchoSave,
+  onEchoDiscard,
 }: ValleyPanelProps) {
   const activeCount = echoes.filter((echo) => !echo.archived).length;
   const idleDelay = new URLSearchParams(window.location.search).get('idle') === '1' ? 2500 : 120000;
@@ -238,7 +250,17 @@ export function ValleyPanel({
             <span className="eyebrow-line" aria-hidden="true" />
             {COPY.valley}
           </p>
-          <h2 id="valley-title">{tab === 'talk' ? '山谷在听' : '山谷里的回音'}</h2>
+          <SplitText
+            key={`vt-${tab}`}
+            id="valley-title"
+            tag="h2"
+            text={tab === 'talk' ? '山谷在听' : '山谷里的回音'}
+            splitType="chars"
+            effect="rise"
+            trigger="load"
+            duration={1.2}
+            delay={60}
+          />
           <span className="season-line">{COPY.seasonIntro[season]}</span>
         </div>
 
@@ -336,12 +358,17 @@ export function ValleyPanel({
                 onWriteSelf={onQuietWriteSelf}
                 onListen={onQuietListen}
                 onCrisis={onQuietCrisis}
+                onCalm={onQuietCalm}
                 messages={messages}
                 reduced={reduced}
               />
             </>
           ) : (
-            <EchoList
+            <>
+              {echoSection === 'echoes' && onEchoSave && onEchoDiscard ? (
+                <EchoComposer draft={echoDraft} onSave={onEchoSave} onDiscard={onEchoDiscard} />
+              ) : null}
+              <EchoList
               echoes={echoes}
               view={echoView}
               onView={onEchoView}
@@ -368,6 +395,7 @@ export function ValleyPanel({
               onRelateListen={onRelateListen}
               onRelateSkip={onRelateSkip}
             />
+            </>
           )}
         </div>
       </div>

@@ -16,6 +16,8 @@ import {
 import { formatHours, formatMinutes, fromIso, planId, shortDate, weekdayLabel } from '../utils/date';
 import { Fox } from './Fox';
 import { Modal } from './Modal';
+import SplitText from '../motion/SplitText.jsx';
+import JellyRadio from '../motion/JellyRadio.jsx';
 
 interface PlanWizardProps {
   open: boolean;
@@ -506,21 +508,40 @@ export function PlanWizard({ open, plan, onClose, onPlan, onUpdatePlan }: PlanWi
               <Fox className="avatar-fox" />
             </div>
             <div className="bubble assistant">
-              <p>{stepQuestions[step]}</p>
+              <SplitText
+                key={`q-${step}`}
+                text={stepQuestions[step]}
+                splitType="lines"
+                effect="blur"
+                trigger="load"
+                duration={0.9}
+                className="wizard-question"
+              />
               <p className="bubble-hint">{stepHints[step]}</p>
             </div>
           </div>
           <div className="wizard-chips">
-            {stepChips[step].map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                className={`chip ${currentValue === chip ? 'is-on' : ''}`}
-                onClick={() => pick(chip)}
-              >
-                {chip}
-              </button>
-            ))}
+            {step === 2 ? (
+              stepChips[step].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className={`chip ${currentValue === chip ? 'is-on' : ''}`}
+                  onClick={() => pick(chip)}
+                >
+                  {chip}
+                </button>
+              ))
+            ) : (
+              <JellyRadio
+                items={[...stepChips[step]]}
+                value={currentValue}
+                onChange={(next: any) => pick(next)}
+                size={step === 4 ? 'md' : 'sm'}
+                ariaLabel={stepQuestions[step]}
+                swell={0.1}
+              />
+            )}
             {/* 第 3 步：跟「刷几套真题」并排的同一行，是同等份量的选项，不是角落里的小字 */}
             {step === 2 ? (
               <button

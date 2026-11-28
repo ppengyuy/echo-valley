@@ -22,6 +22,8 @@ export const FALLBACKS = {
     '你留下的回音，只在这个山谷里陪你，不用于模型训练，也不对外分发。原型阶段只在本次会话里临时保存，会话结束就销毁。你可以随时让回音消散，也可以一键清空山谷。',
   healing:
     '我不承诺消除焦虑，也不做心理治疗。我能做的是安静陪你梳理感受，辅助你看见自己。备考里的焦虑是正常情绪，我们不追求“治愈”，只给你一个不被评判的空间。',
+  trauma:
+    '你提到的这部分，可能不是靠聊天能处理好的。反复回来的画面、和当下对不上的感觉，适合找一位专业的心理咨询师或精神科医生做一次评估，那里比我稳。我做不了诊断，也做不了创伤治疗。此刻我可以先陪你坐一会儿，把今天过完。',
   welcome:
     '你好，我是刘看山。这里是回音谷。我不是心理咨询师，也不是解题老师，我只是陪你停一停、听一听的伙伴。今天你可以选择：向山谷倾诉，留下一段回音；梳理你的山间行程，规划学习；或者聆听过往留下的回音。山谷不会评判，我会在这里安静接住你的声音。',
 } as const;
@@ -61,6 +63,25 @@ const CRISIS_WORDS = [
 ];
 
 const WARNING_WORDS = ['撑不下去', '熬不下去', '崩溃了', '不想起床', '整夜睡不着', '没法出门', '不敢见人'];
+
+/** 临床范围：闪回、解离、长期创伤。命中后停止情绪探索，转向专业评估。 */
+const TRAUMA_WORDS = [
+  '闪回',
+  '解离',
+  'PTSD',
+  'CPTSD',
+  '创伤后',
+  '童年创伤',
+  '小时候被打',
+  '小时候被骂',
+  '被性侵',
+  '被猥亵',
+  '家暴',
+  '被虐待',
+  '长期被打',
+  '反复做同一个梦',
+  '那段经历一直',
+];
 
 const DIAGNOSIS_WORDS = [
   '抑郁症',
@@ -144,6 +165,7 @@ export function detectFallback(text: string, heavyTurns = 0): FallbackHit | null
   const t = text.replace(/\s+/g, '');
 
   if (hasAny(t, CRISIS_WORDS)) return { key: 'crisis', level: 'crisis', stop: true };
+  if (hasAny(t, TRAUMA_WORDS)) return { key: 'trauma', level: 'warning', stop: true };
   if (hasAny(t, DIAGNOSIS_WORDS)) return { key: 'diagnosis', level: 'warning', stop: true };
   if (hasAny(t, HOMEWORK_WORDS)) return { key: 'homework', level: 'normal', stop: true };
   if (hasAny(t, GHOSTWRITE_WORDS)) return { key: 'ghostwrite', level: 'normal', stop: true };
@@ -216,6 +238,67 @@ export const ECHO_FEELING_WORDS = [
 
 export const STOP_WORDS = ['不想聊', '不想说了', '先这样', '先到这', '停一下', '结束吧', '晚安', '改天再聊'];
 
+/** 只要倾诉、不要办法。命中后就只陪，不再给思路。 */
+export const VENTING_WORDS = [
+  '别给建议',
+  '不要建议',
+  '别建议',
+  '不用建议',
+  '别分析',
+  '不要分析',
+  '不用分析',
+  '别帮我分析',
+  '只想说',
+  '就想说',
+  '只是想吐',
+  '想吐槽',
+  '吐槽一下',
+  '听我说',
+  '不用帮我想办法',
+  '别帮我解决',
+  '陪我待着',
+];
+
+/** 明确要办法：走到第三步（分析）的唯一入口。 */
+export const OPTIONS_WORDS = [
+  '怎么办',
+  '该怎么',
+  '怎么处理',
+  '怎么做',
+  '如何面对',
+  '有什么办法',
+  '给点建议',
+  '你说呢',
+  '帮我分析',
+  '帮我想想',
+  '我该选',
+  '我该不该',
+  '要不要继续',
+  '两条走法',
+  '两条路',
+  '给两条',
+  '二选一',
+  '选哪个',
+  '哪个更好',
+  '怎么安排',
+  '有什么建议',
+];
+
+/** 需要澄清的信号：把事实和脑补分开。 */
+export const CLARIFY_WORDS = [
+  '是不是我',
+  '我是不是',
+  '总觉得',
+  '一定是',
+  '肯定',
+  '来不及',
+  '我不配',
+  '他们都',
+  '想多了',
+  '会不会',
+];
+
+
 export const RECALL_WORDS = [
   '复盘',
   '这周走到',
@@ -255,4 +338,19 @@ export function wantsPlan(text: string): boolean {
 
 export function isReading(text: string): boolean {
   return hasAny(text.replace(/\s+/g, ''), READING_WORDS);
+}
+
+/** 只想倾诉，不要办法。 */
+export function wantsVenting(text: string): boolean {
+  return hasAny(text.replace(/\s+/g, ''), VENTING_WORDS);
+}
+
+/** 明确要办法，才走到分析那一步。 */
+export function wantsOptions(text: string): boolean {
+  return hasAny(text.replace(/\s+/g, ''), OPTIONS_WORDS);
+}
+
+/** 话里有绝对化判断或对他人心思的推定，适合先把事实和担心分开。 */
+export function needsClarify(text: string): boolean {
+  return hasAny(text.replace(/\s+/g, ''), CLARIFY_WORDS);
 }

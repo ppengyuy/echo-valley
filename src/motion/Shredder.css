@@ -1,0 +1,73 @@
+/* Shredder · 轻量版 */
+.shred {
+  position: relative;
+  width: 100%;
+  min-height: var(--shred-h, 180px);
+  overflow: hidden;
+}
+
+.shred-machine {
+  position: relative;
+  height: var(--shred-h, 180px);
+  overflow: hidden;
+}
+
+.shred-sheet {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 6px);
+}
+
+.shred-strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.shred-strip-inner {
+  position: absolute;
+  top: 0;
+  width: var(--shred-w, 340px);
+  height: 100%;
+  padding: 18px 20px;
+  box-sizing: border-box;
+  background: var(--panel-strong, #fcfcf7);
+  border-left: 1px solid transparent;
+}
+
+.shred-text {
+  display: block;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink, #343d36);
+}
+
+.shred-meta {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ink-faint, #8b958d);
+}
+
+.shred-slit {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: calc(var(--shred-fall, 120px) * 0.62);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(60, 72, 62, 0.5);
+  transform-origin: center;
+}
+
+.shred-fall {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--shred-fall, 120px);
+  background: linear-gradient(to bottom, rgba(238, 242, 236, 0), rgba(238, 242, 236, 0.9));
+  pointer-events: none;
+}

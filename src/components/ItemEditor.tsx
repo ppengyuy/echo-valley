@@ -5,6 +5,7 @@ import { COPY } from '../copy';
 import type { Plan, PlanItem, PlanStatus } from '../types';
 import { dayTotal } from '../plan/edit';
 import { addDays, formatMinutes, fromIso, isoDate, shortDate } from '../utils/date';
+import JellyRadio from '../motion/JellyRadio.jsx';
 
 interface ItemEditorProps {
   item: PlanItem;
@@ -291,16 +292,15 @@ export function ItemEditor({
       <div className="editor-field">
         <span>大概花多久</span>
         <div className="editor-chips">
-          {MINUTE_CHIPS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={`editor-chip ${minutes === value ? 'is-on' : ''}`}
-              onClick={() => commitMinutes(value)}
-            >
-              {value} 分钟
-            </button>
-          ))}
+          <JellyRadio
+            items={MINUTE_CHIPS.map((value) => ({ value: String(value), label: `${value} 分钟` }))}
+            value={String(minutes)}
+            onChange={(next: any) => commitMinutes(Number(next))}
+            size="sm"
+            ariaLabel="大概花多久"
+            swell={0.08}
+            gap={6}
+          />
         </div>
         <div className="editor-minutes">
           <input

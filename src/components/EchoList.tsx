@@ -3,6 +3,8 @@ import { COPY } from '../copy';
 import type { Echo, Stone } from '../types';
 import { echoTimeLabel } from '../utils/date';
 import { StoneList } from './StoneList';
+import SwipeRow from '../motion/SwipeRow.jsx';
+import SplitText from '../motion/SplitText.jsx';
 
 export type EchoSection = 'echoes' | 'stones';
 
@@ -253,15 +255,23 @@ export function EchoList({
             <span />
             <span />
           </div>
-          <p>
-            {searching
-              ? COPY.searchEmpty
-              : view === 'archive'
-                ? COPY.archiveEmpty
-                : tagFilter !== 'all'
-                  ? COPY.tagEmpty
-                  : COPY.echoEmpty}
-          </p>
+          <SplitText
+            key={`empty-${searching}-${view}-${tagFilter}`}
+            text={
+              searching
+                ? COPY.searchEmpty
+                : view === 'archive'
+                  ? COPY.archiveEmpty
+                  : tagFilter !== 'all'
+                    ? COPY.tagEmpty
+                    : COPY.echoEmpty
+            }
+            splitType="lines"
+            effect="fade"
+            trigger="load"
+            duration={0.8}
+            className="echo-empty-line"
+          />
         </div>
       ) : (
         <div className="echo-list" ref={listRef}>
@@ -272,8 +282,20 @@ export function EchoList({
             </svg>
           ) : null}
           {filtered.map((echo) => (
-            <article
+            <SwipeRow
               key={echo.id}
+              label="一条回音"
+              actionWidth={76}
+              actions={[
+                { id: 'archive', label: echo.archived ? COPY.actions.unarchive : COPY.actions.archive },
+                { id: 'letgo', label: COPY.actions.letGo, color: 'var(--ink-soft)' },
+              ]}
+              onAction={(action: any) => {
+                if (action.id === 'archive') onArchive(echo, !echo.archived);
+                if (action.id === 'letgo') onDelete(echo);
+              }}
+            >
+            <article
               ref={(node) => {
                 rowRefs.current[echo.id] = node;
               }}
@@ -368,6 +390,7 @@ export function EchoList({
                 </div>
               ) : null}
             </article>
+            </SwipeRow>
           ))}
         </div>
       )}

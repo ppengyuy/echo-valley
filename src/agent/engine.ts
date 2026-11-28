@@ -7,9 +7,12 @@ import {
   isReading,
   looksLikeEcho,
   looksLikeSelfAttack,
+  needsClarify,
+  wantsOptions,
   wantsPlan,
   wantsRecall,
   wantsStop,
+  wantsVenting,
 } from '../data/fallbacks';
 
 export interface AgentInput {
@@ -124,6 +127,38 @@ function pickReply(intent: Intent, turn: number): string {
   return bank[turn % bank.length];
 }
 
+/* 四步流程的第二步到第三步：只在用户走到那一步时才用，不主动推。 */
+
+/** 只想倾诉：只陪，不给办法，不追问原因。 */
+const VENTING_REPLIES = [
+  '好，那我就只听，不给办法。说到哪儿算哪儿，不用挑重点。',
+  '嗯，我在。想说什么就说什么，不用理清楚。',
+  '这些话不用挑重点，也不用说服谁。你说，我就在。',
+];
+
+/** 澄清：把已经发生的事，和心里先补上的担心分开。 */
+const CLARIFY_REPLIES = [
+  '先分一分：哪一部分是已经发生的，哪一部分是你心里先补上的担心？',
+  '听起来，压着你的不一定是这件事本身，而是它好像说明了你什么。这个“说明”，是从哪儿来的？',
+  '“一定来不及了”这种话，是眼下的事实，还是此刻的担心？',
+  '你刚才说的这些里，哪一句是你亲耳听到、亲眼看到的，哪一句是后来自己加上去的？',
+];
+
+/** 分析：给一两条可走的路，说清代价，选择权交回去。 */
+const OPTIONS_REPLIES = [
+  '可以把这事拆小一点：一种走法是这周只保一件事，别的先放一放；另一种是干脆停两天，把身体缓过来。两条都不算退，你更想试哪一条？',
+  '有一个方向是把你的边界说出来，让人知道你在哪儿；另一个方向是先不说，等这阵过去。两条都有代价，你想先看哪一条？',
+  '如果往实际里走，可以先只做十分钟，做完就算；如果往松一点走，就先把它搁到明天。哪条更贴现在的你？',
+];
+
+/** 一开口就要办法：先不选，把事说清楚一点。 */
+const OPTIONS_OPENING =
+  '先不急着选。等这件事说清楚一点，能走的路才会显出来。这段时间里，最让你卡住的是哪一步？';
+
+function pick(list: string[], turn: number): string {
+  return list[turn % list.length];
+}
+
 function moodWeather(text: string, intent: Intent): WeatherKind {
   if (intent === 'reading') return 'clear';
   if (intent === 'gratitude') return 'breeze';
@@ -174,6 +209,16 @@ export function respond(input: AgentInput): AgentOutput {
       reply: '好，那就先到这里。山谷一直在，你想回来的时候再回来。',
       stop: true,
       mirrorStage: 'idle',
+    };
+  }
+
+  // 3.5 只想倾诉：关掉后面所有给办法的支路，只陪。
+  if (wantsVenting(t)) {
+    return {
+      reply: pick(VENTING_REPLIES, assistantTurns),
+      allowLlm: true,
+      mirrorStage: 'idle',
+      weather: 'rain',
     };
   }
 
@@ -235,6 +280,20 @@ export function respond(input: AgentInput): AgentOutput {
     intent !== 'apology';
 
   const output: AgentOutput = { reply, allowLlm: true };
+
+  // 8. 第三步（分析）：只有用户明确要办法才给，而且一次只给两条路。
+  if (wantsOptions(t)) {
+    output.reply = assistantTurns === 0 ? OPTIONS_OPENING : pick(OPTIONS_REPLIES, assistantTurns);
+    output.weather = 'mist';
+    return output;
+  }
+
+  // 9. 第二步（澄清）：话里有绝对化判断时，先把事实和担心分开。
+  if (needsClarify(t) && assistantTurns >= 1 && intent !== 'gratitude' && intent !== 'apology') {
+    output.reply = pick(CLARIFY_REPLIES, assistantTurns);
+    output.weather = 'mist';
+    return output;
+  }
 
   if (echoes.length >= 10 && looksLikeEcho(t)) {
     output.reply = `${reply} ${COPY.echoLimitChat}`;

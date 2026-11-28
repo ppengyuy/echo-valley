@@ -3,6 +3,7 @@ import { COPY } from '../copy';
 import type { Stone } from '../types';
 import { Modal } from './Modal';
 import { StonePebble, shapeFor } from './StonePebble';
+import JellyRadio from '../motion/JellyRadio.jsx';
 
 interface StoneListProps {
   stones: Stone[];
@@ -112,24 +113,19 @@ export function StoneList({
       </div>
 
       {tags.length > 0 ? (
-        <div className="tag-filter" aria-label="按标签筛选石子">
-          <button
-            type="button"
-            className={`tag-pill ${tag === 'all' ? 'is-on' : ''}`}
-            onClick={() => setTag('all')}
-          >
-            {COPY.tagFilterAll}
-          </button>
-          {tags.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`tag-pill ${tag === item ? 'is-on' : ''}`}
-              onClick={() => setTag(item)}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="tag-filter">
+          <JellyRadio
+            items={[
+              { value: 'all', label: COPY.tagFilterAll },
+              ...tags.map((item) => ({ value: item, label: item })),
+            ]}
+            value={tag}
+            onChange={(next: any) => setTag(next)}
+            size="sm"
+            ariaLabel="按标签筛选石子"
+            swell={0.08}
+            gap={6}
+          />
         </div>
       ) : null}
 

@@ -14,8 +14,17 @@ import { useValley } from './store';
 import type { Echo, EchoOffer, MirrorStage, Plan, PlanItem, Stone, WeatherKind } from './types';
 import { fileStamp, uid } from './utils/date';
 import { echoTimeLabel } from './utils/date';
+import { ackNotice, applyBackup, buildBackup, hasAckedNotice, hasSeenTour, markTourSeen, parseBackup } from './persist';
+import { DRAFT_PREFIX, type ExerciseDef } from './exercises';
+import { CalmPanel } from './components/CalmPanel';
 import { CompareView } from './components/CompareView';
 import { EchoModal } from './components/EchoModal';
+import type { EchoDraft } from './components/EchoComposer';
+import { ExerciseModal } from './components/ExerciseModal';
+import { FirstRunNotice } from './components/FirstRunNotice';
+import { TourGuide, type TourStep } from './components/TourGuide';
+import { SafetyModal } from './components/SafetyModal';
+import { SettingsModal } from './components/SettingsModal';
 import type { EchoSection } from './components/EchoList';
 import { Header } from './components/Header';
 import { Modal } from './components/Modal';
@@ -32,6 +41,8 @@ import { Ambience } from './components/Ambience';
 import { FALLBACKS } from './data/fallbacks';
 import { detectFallback } from './data/fallbacks';
 import { useIdle } from './utils/useIdle';
+import { setUserReduced } from './motion/gate';
+import Shredder from './motion/Shredder.jsx';
 
 type ConfirmState =
   | { kind: 'delete'; echo: Echo }
@@ -43,7 +54,7 @@ type ConfirmState =
 type ExportFormat = 'csv' | 'excel' | 'print';
 
 export default function App() {
-  const { state, dispatch } = useValley();
+  const { state, dispatch, mode, switchMode, reload, wipe } = useValley();
   const stateRef = useRef(state);
   const busyRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -53,11 +64,21 @@ export default function App() {
   const [tab, setTab] = useState<'talk' | 'echoes'>('talk');
   const [echoView, setEchoView] = useState<'active' | 'archive'>('active');
   const [echoSection, setEchoSection] = useState<EchoSection>('echoes');
-  const [mobileView, setMobileView] = useState<'valley' | 'path'>('valley');
+  const [mobileView, setMobileView] = useState<'valley' | 'path' | 'calm'>('valley');
+  /** 练习弹窗、设置页、安全页、练习带过来的回音草稿。 */
+  const [exercise, setExercise] = useState<ExerciseDef | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [safetyOpen, setSafetyOpen] = useState(false);
+  const [echoDraft, setEchoDraft] = useState<EchoDraft | null>(null);
+  const [firstRunOpen, setFirstRunOpen] = useState(() => !hasAckedNotice());
+  /** 新手引导：见过就不再自动弹。 */
+  const [tourOpen, setTourOpen] = useState(false);
   const [typing, setTyping] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [echoOpenId, setEchoOpenId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  /** 消散动画：先确认，播完再真正删库。 */
+  const [shred, setShred] = useState<{ id: string; text: string; meta: string; run: () => void } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -103,6 +124,10 @@ export default function App() {
   }, [state]);
 
   useEffect(() => {
+    setUserReduced(state.reducedMotion);
+  }, [state.reducedMotion]);
+
+  useEffect(() => {
     document.documentElement.dataset.reduced = state.reducedMotion ? 'true' : 'false';
   }, [state.reducedMotion]);
 
@@ -114,11 +139,13 @@ export default function App() {
   useEffect(() => {
     if (seededRef.current) return;
     if (new URLSearchParams(window.location.search).get('demo') !== '1') return;
+    // 先等存储层读完：否则首帧的空状态会先盖掉已有的珍藏。
+    if (!state.hydrated) return;
     if (state.echoes.length > 0 || state.plan) return;
     seededRef.current = true;
     demoEchoes().forEach((echo) => dispatch({ type: 'ADD_ECHO', echo }));
     dispatch({ type: 'SET_PLAN', plan: demoPlan() });
-  }, [dispatch, state.echoes.length, state.plan]);
+  }, [dispatch, state.echoes.length, state.plan, state.hydrated]);
 
   useEffect(() => {
     if (state.fiveEchoSeed > fiveRef.current) {
@@ -217,6 +244,72 @@ export default function App() {
   const focusComposer = useCallback(() => {
     window.setTimeout(() => composerRef.current?.focus(), 120);
   }, []);
+
+  /** 练习 → 回音草稿：只把一句话填进回音谷，绝不自动保存。 */
+  const draftFromExercise = useCallback(
+    (name: string) => {
+      setExercise(null);
+      setMobileView('valley');
+      setTab('echoes');
+      setEchoSection('echoes');
+      setEchoView('active');
+      setEchoDraft({ text: DRAFT_PREFIX(name), nonce: Date.now(), source: name });
+      notify('草稿放进回音谷了，确认之后才会存下来。');
+    },
+    [notify],
+  );
+
+  const saveEchoDraft = useCallback(
+    (text: string) => {
+      const ok = saveEchoText(text);
+      if (ok) setEchoDraft(null);
+      return ok;
+    },
+    [saveEchoText],
+  );
+
+  const discardEchoDraft = useCallback(() => {
+    setEchoDraft(null);
+  }, []);
+
+  /** 首次启动的两个选项：确认进珍藏，或本次只用会话。 */
+  const chooseFirstRun = useCallback(
+    (choice: 'local' | 'session') => {
+      if (choice === 'local') {
+        ackNotice();
+        if (mode !== 'local') switchMode('local');
+      } else {
+        // 本次不落库；下次打开会再问一次。
+        switchMode('session');
+      }
+      setFirstRunOpen(false);
+    },
+    [mode, switchMode],
+  );
+
+  const exportBackup = useCallback(async () => {
+    const backup = await buildBackup();
+    downloadText(`回音谷_本地珍藏_${fileStamp()}.json`, JSON.stringify(backup, null, 2));
+  }, []);
+
+  const importBackup = useCallback(
+    async (file: File) => {
+      const raw = await file.text();
+      const parsed = parseBackup(raw);
+      await applyBackup(parsed);
+      await reload();
+      return mode === 'local'
+        ? `已经恢复了 ${parsed.echoes.length} 条回音${parsed.plan ? '和这一份小路计划' : ''}。`
+        : '已经恢复到本地珍藏。现在是会话模式，切回珍藏就能看见。';
+    },
+    [mode, reload],
+  );
+
+  const wipeEverything = useCallback(async () => {
+    await wipe();
+    setEchoDraft(null);
+    notify('山谷空下来了。');
+  }, [notify, wipe]);
 
   /** 「听一听」：只带回旧回音的原话与时间，再问一句，不做分析也不做对比。 */
   const relateListen = useCallback(
@@ -732,20 +825,37 @@ export default function App() {
     notify('演示计划已经放进小路。');
   }, [dispatch, notify]);
 
+  /** 先把要被带走的内容交给 Shredder，动画结束再真正落库删除。 */
+  const beginShred = useCallback((text: string, meta: string, run: () => void) => {
+    setConfirm(null);
+    setShred({ id: uid(), text: text.length > 260 ? `${text.slice(0, 260)}…` : text, meta, run });
+  }, []);
+
   const doConfirm = useCallback(() => {
     if (!confirm) return;
     if (confirm.kind === 'delete') {
-      dispatch({ type: 'DELETE_ECHO', id: confirm.echo.id });
-      notify(COPY.toasts.letGo);
-      if (echoOpenId === confirm.echo.id) setEchoOpenId(null);
+      const target = confirm.echo;
+      beginShred(target.text, `${COPY.timePrefix} ${echoTimeLabel(target.createdAt)}`, () => {
+        dispatch({ type: 'DELETE_ECHO', id: target.id });
+        notify(COPY.toasts.letGo);
+        if (echoOpenId === target.id) setEchoOpenId(null);
+      });
+      return;
     }
     if (confirm.kind === 'clear') {
-      dispatch({ type: 'CLEAR_ECHOES' });
-      notify(COPY.toasts.cleared);
+      beginShred('全部回音，连同溪滩上那句话与归档里的旧声音', '清空后不可恢复，只能靠之前的备份', () => {
+        dispatch({ type: 'CLEAR_ECHOES' });
+        notify(COPY.toasts.cleared);
+      });
+      return;
     }
     if (confirm.kind === 'stone-flow') {
-      dispatch({ type: 'REMOVE_STONE', id: confirm.stone.id });
-      notify(COPY.stone.flowed);
+      const target = confirm.stone;
+      beginShred(target.text, '让它顺水走，溪滩上不再留着', () => {
+        dispatch({ type: 'REMOVE_STONE', id: target.id });
+        notify(COPY.stone.flowed);
+      });
+      return;
     }
     if (confirm.kind === 'reset') {
       dispatch({ type: 'RESET' });
@@ -760,7 +870,7 @@ export default function App() {
       setJustPickedId(null);
     }
     setConfirm(null);
-  }, [confirm, dispatch, echoOpenId, notify]);
+  }, [confirm, dispatch, echoOpenId, notify, beginShred]);
 
   const echoOpen = state.echoes.find((echo) => echo.id === echoOpenId) ?? null;
   const planText = state.plan ? buildPlanText(state.plan) : '';
@@ -784,6 +894,104 @@ export default function App() {
           }
         : { title: COPY.confirmTitle, body: COPY.confirmBody, ok: COPY.confirmOk, cancel: COPY.confirmCancel };
 
+  /** 进「静一下心」：顺手把静默态和面板收掉，免得切走了还留着半透明的一层。 */
+  const openCalm = () => {
+    setQuietMode('off');
+    setQuietPanelOpen(false);
+    setMobileView('calm');
+  };
+
+  useEffect(() => {
+    if (!state.hydrated) return;
+    if (firstRunOpen) return;
+    if (hasSeenTour()) return;
+    const timer = window.setTimeout(() => setTourOpen(true), 700);
+    return () => window.clearTimeout(timer);
+  }, [state.hydrated, firstRunOpen]);
+
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    markTourSeen();
+    setMobileView('valley');
+    setTab('talk');
+  }, []);
+
+  const tourSteps: TourStep[] = [
+    {
+      id: 'welcome',
+      title: '这是回音谷，先花一分钟认一下',
+      body: '三个空间：回音谷（把话放下）、山间小路（把学习排进这一周）、静一下心（九个练习）。它不做心理咨询，也不解题，只陪着你。',
+      hint: '引导只有这一次，跳过也没关系。',
+      enter: () => {
+        setMobileView('valley');
+        setTab('talk');
+      },
+    },
+    {
+      id: 'entries',
+      title: '三条入口，挑最轻的那一条',
+      target: '.entry-nav',
+      body: '「向山谷倾诉」是打字聊；「梳理山间行程」打开标路向导；「聆听回音」翻看以前留下来的句子。',
+    },
+    {
+      id: 'composer',
+      title: '想说话，就写在这里',
+      target: '.composer',
+      body: 'Enter 说给刘看山，Shift + Enter 换行。勾上「只想留一句话，不用回应」，它就只收下，不追问。',
+      hint: '没想好也可以先空着，山谷不催。',
+    },
+    {
+      id: 'quiet',
+      title: '不想开口，也有别的入口',
+      target: '.quiet-chip',
+      body: '点「今天不想说话」：陪你坐一会儿、放一点山谷的声音，或者借一句别人的话。',
+    },
+    {
+      id: 'path',
+      title: '山间小路：把想推进的事排进这一周',
+      target: '.path-panel .panel-head',
+      enter: () => setMobileView('path'),
+      body: '点右上「重新标一遍」走一遍向导：想去哪、大概多久、这周先动哪一件。排好的卡片可以直接拖到别的日子。',
+    },
+    {
+      id: 'calm',
+      title: '静一下心：九个练习，随手挑一个',
+      target: '.calm-panel .calm-head',
+      enter: () => setMobileView('calm'),
+      body: '呼吸、身体扫描、舒尔特方格……每一个都写明时长和「做到哪里就可以停」，不满意随时退出。',
+    },
+    {
+      id: 'echoes',
+      title: '留下来的句子，都在这儿',
+      target: '.echo-view .echo-toolbar',
+      enter: () => {
+        setMobileView('valley');
+        setTab('echoes');
+      },
+      body: '可以搜索、置顶（最多三条）、归档，或者让某一条彻底消散。没点「确认存入山谷」的话，什么都不会留下。',
+    },
+    {
+      id: 'settings',
+      title: '最后，看一眼「设置」',
+      target: '.quiet-tools',
+      enter: () => {
+        setMobileView('valley');
+        setTab('talk');
+      },
+      body: '里面能换存储方式（本地珍藏 / 会话模式）、导出 JSON 备份、清空山谷，也能「再看一遍这个引导」。',
+      hint: '内容只存在你这台电脑的浏览器里，不经过网络。',
+    },
+    {
+      id: 'done',
+      title: '从哪一步开始都行',
+      body: '先去回音谷写一句，还是先去山间小路排一件事，都不影响。准备好了就开始。',
+      enter: () => {
+        setMobileView('valley');
+        setTab('talk');
+      },
+    },
+  ];
+
   return (
     <>
       <div
@@ -800,9 +1008,11 @@ export default function App() {
           onReduced={(value) => dispatch({ type: 'SET_REDUCED', value })}
           onRehearsal={() => setRehearsalOpen(true)}
           onModelSettings={() => setModelSettingsOpen(true)}
+          onSettings={() => setSettingsOpen(true)}
+          onCalm={openCalm}
         />
 
-        <main className={`split mobile-${mobileView}`}>
+        <main className={`split ${mobileView === 'calm' ? 'calm-mode' : `mobile-${mobileView}`}`}>
           <PathPanel
             plan={state.plan}
             onOpenWizard={openPlanner}
@@ -878,12 +1088,26 @@ export default function App() {
             onRelateListen={relateListen}
             onRelateSkip={relateSkip}
             onPickStone={() => openPickStone()}
+            echoDraft={echoDraft}
+            onEchoSave={saveEchoDraft}
+            onEchoDiscard={discardEchoDraft}
+            onQuietCalm={openCalm}
           />
+          {mobileView === 'calm' ? (
+            <CalmPanel
+              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSafety={() => setSafetyOpen(true)}
+              onStart={(item) => setExercise(item)}
+              onBack={() => setMobileView('valley')}
+            />
+          ) : null}
         </main>
 
         <footer className="app-foot">
           <p>{COPY.footer}</p>
-          <p className="app-foot-note">{COPY.sessionNote}</p>
+          <p className="app-foot-note">
+            {mode === 'local' ? '本地珍藏已开启：内容存在本机，记得定期导出备份。' : '会话模式：关掉这一页，新写下的回音就散了。'}
+          </p>
         </footer>
 
         <nav className="mobile-nav" aria-label="在山谷与小路的切换">
@@ -902,6 +1126,14 @@ export default function App() {
             onClick={() => setMobileView('path')}
           >
             {COPY.path}
+          </button>
+          <button
+            type="button"
+            className={mobileView === 'calm' ? 'is-on' : ''}
+            aria-pressed={mobileView === 'calm'}
+            onClick={openCalm}
+          >
+            静一下心
           </button>
         </nav>
 
@@ -1136,8 +1368,54 @@ export default function App() {
         </div>
       </Modal>
 
+      <ExerciseModal exercise={exercise} onClose={() => setExercise(null)} onDraft={draftFromExercise} />
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        mode={mode}
+        onSwitchMode={(next) => switchMode(next)}
+        onExport={exportBackup}
+        onImport={importBackup}
+        onWipe={() => {
+          beginShred('全部回音，连同山间小路上的这一版计划', '清空后不可恢复', () => {
+            void wipeEverything();
+          });
+          return Promise.resolve();
+        }}
+        onOpenSafety={() => {
+          setSettingsOpen(false);
+          setSafetyOpen(true);
+        }}
+        onReplayTour={() => setTourOpen(true)}
+      />
+
+      <SafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} />
+
+      <FirstRunNotice open={firstRunOpen} onChoose={chooseFirstRun} />
+
+      <TourGuide open={tourOpen && !firstRunOpen} steps={tourSteps} onClose={closeTour} />
+
+      {shred ? (
+        <div className="shred-layer" role="presentation">
+          <div className="shred-card">
+            <Shredder
+              key={shred.id}
+              text={shred.text}
+              meta={shred.meta}
+              onDone={() => {
+                shred.run();
+                setShred(null);
+              }}
+            />
+          </div>
+          <p className="shred-note">正在让它慢慢散开，不用做别的。</p>
+        </div>
+      ) : null}
+
       <Toasts toasts={state.toasts} onDone={(id) => dispatch({ type: 'DISMISS_TOAST', id })} />
     </>
   );
 }
+
 

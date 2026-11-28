@@ -1,0 +1,58 @@
+/* TrueFocus · 克制版 */
+.tf-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 0.7em;
+  align-items: baseline;
+  user-select: none;
+}
+
+.tf-word {
+  position: relative;
+  display: inline-block;
+  will-change: filter, opacity;
+}
+
+.tf-underline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: calc(var(--tf-width, 2px) / 2);
+  background: var(--tf-border, var(--accent));
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.tf-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: var(--tf-corner, 12px);
+  height: var(--tf-corner, 12px);
+  border: var(--tf-width, 2px) solid var(--tf-border, var(--accent));
+  border-radius: 4px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tf-corner.top-left {
+  border-right: none;
+  border-bottom: none;
+}
+
+.tf-corner.top-right {
+  border-left: none;
+  border-bottom: none;
+}
+
+.tf-corner.bottom-left {
+  border-right: none;
+  border-top: none;
+}
+
+.tf-corner.bottom-right {
+  border-left: none;
+  border-top: none;
+}
